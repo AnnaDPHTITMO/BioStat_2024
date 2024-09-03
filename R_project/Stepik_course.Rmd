@@ -2,7 +2,9 @@
 title: "Stepik_course"
 author: "Anna"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -17,7 +19,7 @@ When you click the **Knit** button a document will be generated that includes bo
 
 ```{r 4.1}
 library(readr)
-data <- read_tsv("data_tsv.tsv", skip = 0, max = Inf)
+data <- read_tsv("data_tsv.tsv", skip = 0, n_max = Inf)
 ```
 
 ```{r 4.1 write}
@@ -29,6 +31,92 @@ write_csv2(data, "data_csv2.csv")
 
 write_excel_csv2(data, "data_csv2.csv")
 ```
+
+```{r 4.1 excel}
+library(readxl)
+dataexc <- read_excel("data_excel.xlsx", sheet = "data_csv2")
+library(openxlsx)
+write.xlsx(dataexc, "data_excel1.xlsx", colNames = TRUE)
+```
+## Раздел 5.1
+```{r 5.1}
+#quantile(c(32.05, 93.85, 85.52, 56.69, 23.69, 11.29, 51.44, 63.09, 65.65, 35.73, 60.15, 30.93, -4.2), probs=0.95)
+
+t <- c(92.11, 56, 47.89, 62.96, 47.41, 37.05, 73.96, 53, 52.37, 85.23)
+
+# c(var(t), sd(t))
+# IQR(t)
+sd(t)/sqrt(length(t))
+
+```
+## Раздел 5.2
+```{r 5.2}
+
+#summary(data)
+library(psych)
+library(readr)
+#data <- read_rds("numeric_data.rds")
+#psych::describe(data)
+
+data <- read_rds("factor_data.rds")
+table(data$Группа, data$"Группа крови")
+prop.table(table(data$Группа, data$"Группа крови"))
+```
+## Раздел 6.1
+```{r}
+library(readr)
+data <- read_tsv("data_tsv.tsv", skip = 0, n_max = Inf)
+str(data)
+```
+```{r}
+library(tibble)
+# as_tibble(data)
+# data %>% View()
+library(dplyr)
+
+# data %>%
+  # add_column(just_column = "just_values",.before=1) %>%
+  # add_row(`Группа` = "New_group", `Возраст` = 100, .before =1)
+
+data %>%
+  mutate(., ID = row_number())
+
+```
+# Раздел 6.2
+```{r}
+library(dplyr)
+data_1 <- tibble(var_1 = 1:10, var_2 = rep(c("Группа 1", "Группа 2"), 5))
+data_2 <- tibble(var_2 = rbeta(10,1,5), var_3 = rnorm(10))
+data_3 <- tibble(var_4 = 100:91, var_5 = rep(c("Молодые", "Средний возраст"), 5))
+data_1 %>% bind_cols(data_2) %>% bind_cols(data_3)
+```
+```{r}
+data_1 <- tibble(var_1 = 1:8) %>% mutate(id = row_number())
+data_2 <- tibble(var_2 = rnorm(10)) %>% mutate(`Subject ID` = row_number())
+data_1 %>%
+  left_join(data_2, by=c("id"="Subject ID"))
+```
+```{r}
+data_1 %>%
+  right_join(data_2, by=c("id"="Subject ID"))
+```
+```{r}
+data_1 %>%
+  inner_join(data_2, by=c("id"="Subject ID"))
+```
+```{r}
+data_1 %>%
+  full_join(data_2, by=c("id"="Subject ID"))
+```
+
+
+
+
+
+
+
+
+
 
 ## Including Plots
 
