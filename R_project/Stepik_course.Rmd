@@ -108,6 +108,175 @@ data_1 %>%
 data_1 %>%
   full_join(data_2, by=c("id"="Subject ID"))
 ```
+## Раздел 6.3
+```{r}
+data %>% group_by(`Группа`) %>% ungroup()
+data %>% 
+  split(~`Группа`)
+
+```
+```{r}
+data %>% 
+  rowwise() %>%
+  mutate(`Среднее по базофилам за два визита` = mean(c(`Базофилы_E1`, `Базофилы_E2`))) %>%
+  ungroup() %>%
+  select(`Базофилы_E1`,`Базофилы_E2`,`Среднее по базофилам за два визита`)
+  
+
+```
+# Раздел 6.4
+```{r}
+library(readr)
+library(dplyr)
+# data <- read_tsv("data_tsv.tsv", skip = 0, n_max = Inf)
+
+# data %>%
+#  select(`Группа крови`,`Рост`)
+
+# data %>%
+#  select(!`Группа`)
+
+#data %>%
+#  select(where(is.numeric))
+
+#data %>%
+#  select(`Группа`, function(x) is.numeric(x) & mean(x, na.rm = TRUE) > 10)
+
+#data %>% select(contains("_E1"))
+
+#data %>% select(matches("_E\\d{1}"))
+data %>% select(starts_with("Б"))
+
+data %>% select(ends_with("E2"))  
+
+```
+```{r}
+variables <- c("Базофилы_E1", "Эозинофилы_E1", "Гемоглобин_E1")
+data %>% select(any_of(variables))
+```
+```{r}
+
+data %>% 
+  select(where(is.numeric)) %>%
+  select(function(x) sd(x, na.rm = TRUE) > 2 & mean(x, na.rm = TRUE) < 10)
+
+data %>% 
+  select(where(is.numeric)) %>%
+  select(function(x) sd(x, na.rm = TRUE) > 2 | mean(x, na.rm = TRUE) < 10 | median(x, na.rm = TRUE > 5))
+
+data %>% 
+  select(!where(is.numeric))
+```
+```{r}
+data %>% 
+  select(`Пол`, `Эритроциты_E1`, everything())
+
+data %>%
+  select(`Эритроциты_Визит1` = `Эритроциты_E1`, `Эритроциты_Визит2` =`Эритроциты_E1`)
+```
+# Раздел 6.5
+```{r}
+#data %>% 
+#  slice(1:10 * -1)
+
+#data %>% 
+#  slice_head(n=10)
+
+data %>% 
+  slice_head(prop = 0.05)
+
+data %>% 
+  slice_tail(prop = 0.05)
+
+data %>% 
+  slice_sample(prop = 0.05)
+
+data %>% 
+  slice_min(`Возраст`)
+
+data %>% 
+  slice_max(`Возраст`)
+
+```
+```{r}
+data %>%
+  filter(`Пол` == "Женский")
+
+data %>%
+  filter(`Группа крови` %in% c("A (II)", "O (I)") & `Группа` != "Группа 1")
+
+data %>%
+  filter(between(`Возраст`, 31, 34))
+
+data %>%
+  filter(near(Эозинофилы_E1, 3.38, tol = 0.1))
+
+```
+```{r}
+data %>% 
+  filter(if_all(.cols = contains ("Базофилы"), .fns = function(x) x > 1.5))
+
+data %>% 
+  filter(if_any(.cols = contains ("Базофилы"), .fns = function(x) x > 1.5))
+data %>%
+  group_by(`Группа`) %>%
+  filter(`Возраст` > 36)
+```
+# Раздел 6.6
+```{r}
+data %>%
+  mutate(`Женщины с четвертой гр крови` = ifelse (`Пол` == "Женский" & `Группа крови` == "AB (IV)", "Да", "Нет")) %>%
+  select(`Женщины с четвертой гр крови`, everything()) %>%
+  arrange(`Женщины с четвертой гр крови`)
+```
+```{r}
+data %>%
+  mutate(`Возрастная группа` = case_when(`Возраст` < 20 ~ "< 20",
+                                         between(`Возраст`, 20,30) ~ "20 - 30",
+                                         `Возраст` > 30 ~ "> 30") %>% as.factor()) %>%
+  select(`Возраст`,`Возрастная группа`)
+
+library(tidyr)
+
+data %>%
+  mutate(`Группа крови` = `Группа крови` %>% as.character() %>% replace_na("Нет данных") %>% as.factor())
+  
+data %>%
+  mutate(`Группа крови` = `Группа крови` %>% na_if("B (III)"))         
+```
+```{r}
+data %>%
+  mutate(`Группа` = NULL)
+```
+```{r}
+#data %>%
+#  mutate(across(where(is.numeric), function(x) (x - mean(x, na.rm = TRUE))/ sd(x, na.rm = TRUE)))
+
+#data %>%
+#  mutate(across(contains("E1"), function(x) (x - mean(x, na.rm = TRUE))/ sd(x, na.rm = TRUE)))
+
+#data %>%
+#  mutate(across(where(function(x) is.numeric(x) & mean(x, na.rm = TRUE) < 10), function(x) (x - mean(x, na.rm = TRUE))/ #sd(x, na.rm = TRUE)))
+
+data %>% mutate(across(!contains("E1") & !c(`Группа`, `Возраст`) & !where(is.factor) & !where(is.character), function(x) x ^ 2), across(contains("E2"), function(x) x * 100))
+
+```
+```{r}
+data %>%
+  rowwise() %>%
+  mutate(`Среднее по базофилам` = mean(c_across(contains("Базофилы")))) %>%
+  ungroup() %>%
+  select(contains("Базофил"))
+
+data %>%
+  group_by(`Группа`) %>%
+  mutate(across(contains("Базофилы"), function(x) x - mean(x, na.rm = TRUE))) %>%
+  ungroup() %>%
+  select(`Группа`, contains("Базофилы"))
+
+```
+# Раздел 6.7
+
 
 
 
