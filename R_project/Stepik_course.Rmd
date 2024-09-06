@@ -3,8 +3,9 @@ title: "Stepik_course"
 author: "Anna"
 date: "`r Sys.Date()`"
 output:
-  html_document: default
+  word_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -13,9 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+This is an R Markdown document.
 
 ```{r 4.1}
 library(readr)
@@ -276,23 +275,176 @@ data %>%
 
 ```
 # Раздел 6.7
+```{r}
+data %>%
+  rename(`Эритроциты_визит_1` = `Эритроциты_E1`,  `Эритроциты_визит_2` = `Эритроциты_E2`) %>%
+  select(contains("визит"))
+```
+```{r}
+library(stringi)
+data %>%
+  rename_with(function(x) x %>% stri_replace_all_regex(c("E1","E2"), c("Визит1", "Визит2"), vectorize_all = FALSE)) %>%
+  glimpse()
+```
+```{r}
+new_name <- "cool_name"
 
+data %>% 
+  rename(!! new_name := `Группа`) %>%
+  glimpse()
+```
+```{r}
+data %>%
+  arrange(`Возраст`)
 
+data %>%
+  arrange(`Группа крови`)
 
+data %>%
+  arrange(desc(`Рост`), `Возраст`)
+```
+```{r}
+data %>%
+  group_by(`Группа`) %>%
+  arrange(`Возраст`, .by_group = TRUE)
+```
+# Раздел 6.9
+```{r}
+data %>%
+  select(`Группа`, contains("E1")) %>%
+  pivot_longer(!`Группа`)
+```
+```{r}
+data %>%
+  select(`Группа`, contains("E1")) %>%
+  mutate(ID = row_number()) %>%
+  pivot_longer(!c(`Группа`, ID)) %>%
+  pivot_wider(id_cols = ID)
+```
+# Раздел 6.10
+```{r}
+data %>%
+  distinct(`Группа`, .keep_all = TRUE)
+```
+# Раздел 6.11
+```{r}
+tibble(var_1 = rep(paste0("first part","__", "second_part"), 10)) %>%
+  separate(var_1, into = c("var_1","var_2"), sep = "__") %>%
+  unite(new_var, var_1, var_2, sep = " AND ")
+```
+# Раздел 6.12
+```{r}
+data %>%
+  select(`Группа`, where(is.numeric)) %>%
+  group_by(`Группа`) %>%
+  summarize(across(where(is.numeric), function(x) mean(x, na.rm = TRUE)))
+```
+```{r}
+statistics <- list(
+      `Количество субъектов` = ~length(.x) %>% as.character(),
+      `Количество (есть данные)` = ~sum(!is.na(.x)) %>% as.character(),
+      `Нет данных` = ~sum(is.na(.x)) %>% as.character(),
+      `Ср. знач.` = ~ifelse(sum(!is.na(.x)) == 0, "Н/П*", mean(.x, na.rm = TRUE) %>% round(2) %>% as.character()),
+      `Станд. отклон.` = ~ifelse(sum(!is.na(.x)) < 3, "Н/П*", sd(.x, na.rm = TRUE) %>% round(2) %>% as.character()),
+      `95% ДИ для среднего` = ~sd(.x, na.rm = TRUE) %>% round(2) %>% as.character(),
+      `мин. - макс.` = ~ifelse(sum(!is.na(.x)) == 0, "Н/П*", paste0(min(.x, na.rm = TRUE) %>% round(2), " - ", max(.x, na.rm = TRUE) %>% round(2))),
+      `Медиана` = ~ifelse(sum(!is.na(.x)) == 0, "Н/П*", median(.x, na.rm = TRUE) %>% round(2) %>% as.character()),
+      `Q1 - Q3` = ~ifelse(sum(!is.na(.x)) == 0, "Н/П*", paste0(quantile(.x, 0.25, na.rm = TRUE) %>% round(2), " - ", quantile(.x, 0.75, na.rm = TRUE) %>% round(2)))
+)
 
+data %>%
+  select(`Группа`, where(is.numeric)) %>%
+  group_by(`Группа`) %>%
+  summarize(across(where(is.numeric), statistics)) %>%
+  pivot_longer(!`Группа`) %>%
+  separate(name, into = c("Переменная", "Статистика"), sep = "_") %>%
+  rename(`Значение`= value)
 
+```
+```{r}
+library(readr)
+library(stringr)
+data <- read_tsv("data_tsv.tsv", skip = 0, n_max = Inf)
+data <- as.data.frame(unclass(data), stringsAsFactors = TRUE)
+data %>%
+  select(`Группа`, where(is.factor)) %>%
+  mutate(`Группа крови` = `Группа.крови` %>% as.character() %>% replace_na("Нет данных") %>% as.factor()) %>%
+  count(`Группа`, `Группа крови`) %>%
+  group_by(`Группа`) %>%
+  mutate(`Процент по группе` = (n/sum(n)) %>% round(4) %>% `*`(100) %>% str_c("%")) %>%
+  ungroup() %>%
+  mutate(`Процент по выборке` = (n/sum(n)) %>% round(4) %>% `*`(100) %>% str_c("%"))
+```
+# Раздел 7.1
+```{r}
+library(flextable)
+statistics <- list(
+      `Количество субъектов` = ~length(.x) %>% as.character(),
+      `Количество (есть данные)` = ~sum(!is.na(.x)) %>% as.character(),
+      `Нет данных` = ~sum(is.na(.x)) %>% as.character(),
+      `Ср. знач.` = ~ifelse(sum(!is.na(.x)) == 0, "Н/П*", mean(.x, na.rm = TRUE) %>% round(2) %>% as.character()),
+      `Станд. отклон.` = ~ifelse(sum(!is.na(.x)) < 3, "Н/П*", sd(.x, na.rm = TRUE) %>% round(2) %>% as.character()),
+      `95% ДИ для среднего` = ~sd(.x, na.rm = TRUE) %>% round(2) %>% as.character(),
+      `мин. - макс.` = ~ifelse(sum(!is.na(.x)) == 0, "Н/П*", paste0(min(.x, na.rm = TRUE) %>% round(2), " - ", max(.x, na.rm = TRUE) %>% round(2))),
+      `Медиана` = ~ifelse(sum(!is.na(.x)) == 0, "Н/П*", median(.x, na.rm = TRUE) %>% round(2) %>% as.character()),
+      `Q1 - Q3` = ~ifelse(sum(!is.na(.x)) == 0, "Н/П*", paste0(quantile(.x, 0.25, na.rm = TRUE) %>% round(2), " - ", quantile(.x, 0.75, na.rm = TRUE) %>% round(2)))
+)
 
+data %>%
+  select(`Группа`, where(is.numeric)) %>%
+  group_by(`Группа`) %>%
+  summarize(across(where(is.numeric), statistics)) %>%
+  pivot_longer(!`Группа`) %>%
+  separate(name, into = c("Переменная", "Статистика"), sep = "_") %>%
+  rename(`Значение`= value) %>%
+  flextable() %>%
+  theme_box() %>%
+  merge_v(c("Группа", "Переменная"))
 
-
-
-
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```
+```{r}
+tibble(var_1 = c("p-value", "0.001"),
+       var_2 = c("p-value", "0.05")) %>%
+  flextable() %>%
+  theme_box() %>%
+  merge_h(i = 1)
+```
+```{r}
+tibble(`Adverse events` = c("SOC Желудочно кишечные нарушения 1007163674", "РТ Тошнота 10028813", "SOC нарушения со стороны нервной системы", "РТ головная боль 10067858")) %>%
+  flextable() %>%
+  theme_box() %>%
+  align(align = "center", part = "all")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+tibble(`Adverse events` = c("SOC Желудочно кишечные нарушения 1007163674", "РТ Тошнота 10028813", "SOC нарушения со стороны нервной системы", "РТ головная боль 10067858")) %>%
+  flextable() %>%
+  theme_box() %>%
+  align(i = ~ str_detect(`Adverse events`, "SOC"), align = "left") %>%
+  align(i = ~ str_detect(`Adverse events`, "РТ"), align = "right") %>%
+  
+  bold(i = ~ str_detect(`Adverse events`, "SOC")) %>%
+  italic(i = ~ str_detect(`Adverse events`, "РТ")) %>%
+  
+  width(width = 2)
+```
+```{r}
+is_pvalue_sign <- function(x) {
+  
+  x %>% str_remove("<") %>% as.numeric() %>% `<`(0.05)
+  
+}
+
+tibble("p-value" = c("<0.001","0.38","0.124","0.005","0.05")) %>%
+  flextable() %>%
+  theme_box() %>%
+  color (i = ~ is_pvalue_sign(`p-value`), color = "orange")
+ 
+```
+
+
+
+
+
+
+
