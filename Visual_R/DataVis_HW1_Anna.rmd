@@ -96,7 +96,7 @@ hogwarts |>
   geom_boxplot(notch = TRUE) +
   scale_x_discrete(name = "Факультет")+
   labs(y = "Оценки, неделя 3")+
-  scale_fill_discrete(name = "Статус по крови", labels = c("полукровные", "Маглорожденные", "Чистокровные"))+
+  scale_fill_discrete(name = "Статус по крови", labels = c("Полукровные", "Маглорожденные", "Чистокровные"))+
   theme_bw()+
   theme_custom
 ```
@@ -115,9 +115,118 @@ hogwarts |>
                lwd = 1.5)+
   geom_jitter()+
   scale_x_discrete(name = "Факультет")+
-  labs(title = "Распределение оценок за 3ью неделю", y = "Оценка")+
+  labs(title = "Распределение оценок за 3ью неделю", 
+       caption = "Подпись", y = "Оценка")+
   scale_fill_discrete(name = "Статус по крови", labels = c("Полукровные", "Маглорожденные", "Чистокровные"))+
   theme_bw()+
   theme_custom +
   theme(plot.title = element_text(face = "bold", size = 30, hjust = 0.5))
+```
+
+
+## Разное
+
+### Задание 1
+```{r, fig.height = 20}
+hogwarts |> 
+  filter(course == 5) |> 
+  mutate(id = as.factor(id)) |> 
+  ggplot()+
+  geom_segment(aes(x = 0, 
+                   xend = result, 
+                   y = fct_reorder(id, result, .desc = TRUE), 
+                   yend = fct_reorder(id, result, .desc = TRUE)))+
+  geom_point(aes(x = result, 
+                 y = fct_reorder(id, result, .desc = TRUE), colour = wandCore), 
+             size = 3)+
+  scale_colour_manual(values = c("unicorn hair" = "#666666", 
+                               "phoenix feather" = "#ECB939", 
+                               "dragon heartstring" = "#C50000"))+
+  labs(x = "Итоговый балл",
+       y = "id",
+       title = "Итоговые баллы студентов 5го курса")+
+  theme_bw()+
+  theme_custom+
+  theme(
+    plot.title = element_text(size = 28, hjust = 0.5)
+  )
+```
+
+### Задание 2
+```{r}
+hogwarts |> 
+  ggplot()+
+  geom_histogram(aes(x = `Astronomy exam`, fill = (house == "Slytherin")),
+                 bins = ceiling(log2(nrow(hogwarts))+1))+
+  labs(y = "Number of students")+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 18), axis.title.x = element_text(size = 22),
+        axis.text.y = element_text(size = 18), axis.title.y = element_text(size = 20),
+        legend.text = element_text(size=18), legend.title = element_text(size=20))
+```
+### Задание 3
+
+```{r, fig.width=28, fig.height = 14 }
+theme_custom1 <- theme(
+    axis.text = element_text(size = 20),
+    axis.title = element_text(size = 25),
+    legend.title = element_text(size = 20),
+    legend.text = element_text(size = 20),
+    panel.background = element_rect(fill="white"),
+    panel.grid.minor.y = element_line(size=3),
+    panel.grid.major = element_line(colour = "grey"),
+    panel.border = element_rect(fill= NA, colour = "black"),
+    plot.background = element_rect(fill="white")
+  )
+
+hogwarts |> 
+  select(id, `house`, `bloodStatus`, `week_3`) |> 
+  ggplot(aes(x = fct_reorder(house, week_3, .fun="median", .desc = TRUE), y = week_3, fill = bloodStatus))+
+  geom_boxplot(notch = TRUE, 
+               outliers = FALSE, 
+               varwidth = TRUE, 
+               staplewidth = 0.5, 
+               linetype = 1,
+               lwd = 1.5)+
+  geom_jitter()+
+  scale_x_discrete(name = "Факультет")+
+  labs(title = "Распределение оценок за 3ью неделю", 
+       caption = "Подпись", y = "Оценка")+
+  scale_fill_discrete(name = "Статус по крови", labels = c("Полукровные", "Маглорожденные", "Чистокровные"))+
+  theme_custom1 +
+  theme(plot.title = element_text(face = "bold", size = 30, hjust = 0.5))
+```
+
+## Фасетирование
+
+### Задание 1
+Исходя из приведенных примеров Фасетирования по строкам и столбцам является наиболее оптимальным для гистограмм, так как позволяет более оптимально и равномерно расположить столбики гистограммы, а также сранивать гистограммы между собой. Для violin_plot фасетирование по строкам или столбцам зависит от ориентации violin. Если ориентация вертикальная, то фасетирование по столбцам наиболее оптимально, а для горизонтальной ориентации фасетирования по строкам наиболее подходящее. 
+
+### Задание 2
+```{r}
+ggplot(hogwarts)+
+  geom_histogram(aes(x = `Flying exam`),
+                 fill = "turquoise1", 
+                 colour = "grey49", 
+                 bins = 15)+
+  facet_wrap(vars(course))+
+  theme_bw()
+```
+
+### Задание 3
+```{r}
+ggplot(hogwarts)+
+  geom_density(aes(x = `Defence against the dark arts exam`), 
+               fill = "red", 
+               colour = "grey49", 
+               alpha = 0.5, 
+               bins = ceiling(log2(nrow(hogwarts))+1))+
+  geom_density(aes(x = `Herbology exam`), 
+               fill = "lightgreen", 
+               colour = "grey49", 
+               alpha = 0.3, 
+               bins = ceiling(log2(nrow(hogwarts))+1))+
+  facet_grid(sex~.)+
+  theme_bw()+
+  theme_custom1
 ```
