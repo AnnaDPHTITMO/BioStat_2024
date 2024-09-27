@@ -164,6 +164,7 @@ hogwarts |>
         axis.text.y = element_text(size = 18), axis.title.y = element_text(size = 20),
         legend.text = element_text(size=18), legend.title = element_text(size=20))
 ```
+
 ### Задание 3
 
 ```{r, fig.width=28, fig.height = 14 }
@@ -214,6 +215,7 @@ ggplot(hogwarts)+
 ```
 
 ### Задание 3
+
 ```{r}
 ggplot(hogwarts)+
   geom_density(aes(x = `Defence against the dark arts exam`), 
