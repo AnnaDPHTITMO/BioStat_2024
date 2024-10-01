@@ -1,0 +1,52 @@
+---
+title: "Measure associations Homework1"
+author: "Anna"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(readxl)
+library(dplyr)
+
+
+# самописные функции
+
+
+
+```
+
+# Задание 1
+
+## Чтение данных
+
+
+```{r, echo = FALSE}
+
+read_csv("data/diabetes.csv") |> mutate(across(where(is.character), factor)) -> original_data
+original_data |> head()
+
+
+
+```
+
+## Построение 2Х2 таблицы и расчет рисков
+
+```{r}
+tb <- table(original_data$ИМТ, original_data$Диабет)
+riskD_IMThigh <- round(tb[1,1]/(tb[1,1] + tb[1,2]),2)
+riskD_IMTnorm <- round(tb[2,1]/(tb[2,1] + tb[2,2]),2)
+round(riskD_IMThigh/riskD_IMTnorm, 2) -> rel_ratio
+
+risk_diff <- round(riskD_IMThigh - riskD_IMTnorm,2)
+
+print(paste("Риск диабета при высоком ИМТ: ", riskD_IMThigh))
+print(paste("Риск диабета при нормальном ИМТ: ", riskD_IMTnorm))
+print(paste("Отношение рисков (RR): ", rel_ratio))
+print(paste("Разница рисков (RD): ", risk_diff))
+
+
+```
