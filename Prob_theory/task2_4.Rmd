@@ -1,0 +1,60 @@
+---
+title: "Home work 2 Task 4"
+author: "Anna"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+
+```
+
+```{r}
+calc_error <- Vectorize(function(pr,N){
+values <- 0:1 # Значения, которые может принимать событие (1-полное исцеление, 0-отсутствие исцеления)
+Pr <- c(1-pr, pr)  # Распределение в генеральной совокупности
+general_population <- sample(values, 1000000, prob = Pr, replace = TRUE) # Генеральная совокупность
+df_all_repeats <- data.frame(
+  n_exp = rep(1:1000, each = N), # 1000 число повторений эксперимента
+  ID =  seq(1:N),
+  event_upd = sample(general_population, N*1000, replace=FALSE)
+)
+
+df_sample_prob <- df_all_repeats %>% 
+  group_by(n_exp) %>% 
+  dplyr::summarise(prob_sample = sum(event_upd)/length(event_upd)) %>%
+  ungroup()
+
+
+return(round(sqrt( mean((df_sample_prob$prob_sample-pr)^2) )/pr,2)) # относительная ошибка истинной вероятности события
+
+})
+
+
+df_result <- data.frame(
+  sample_size = seq(5,100, by=10),
+  probab = rep(seq(0.1,1,by=0.05), length(seq(5,100, by=10)))
+)
+
+df_result$error = calc_error(df_result$probab, df_result$sample_size)
+```
+
+# визуализируем зависимость
+
+```{r, fig.height =5}
+df_result %>%
+  ggplot()+
+  geom_tile(aes(x = sample_size, 
+                 y = probab,
+                fill = error)) +
+
+  scale_fill_gradient(name = "Относительная ошибка", low = "blue", high = "red")+
+  labs(title="Относительная ошибка определения истинной вероятности события", x="Размер выборки", y="Истинная вероятность события")+
+  theme_bw()
+```
+
+# Закономерности
+Относительная ошибка убывает с увеличением размера выборки и увеличением истинной вероятности события
