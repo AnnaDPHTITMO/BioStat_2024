@@ -16,6 +16,11 @@ library(purrr)
 library(lubridate)
 library(flextable)
 library(infer)
+library(corrplot)
+library(corrr)
+library(reshape2)
+library(RColorBrewer)
+library(ggbeeswarm)
 
 # самописные функции
 outliers <- function(dataframe){
@@ -253,17 +258,15 @@ cleaned_data %>%
 3) Раскрасьте боксплоты с помощью библиотеки RColorBrewer.
 
 ```{r, fig.width=14, fig.height = 14}
-library(reshape2)
-library(RColorBrewer)
-library(ggbeeswarm)
 
-cleaned_data |> 
+
+cleaned_data[1:100,] |> 
   select(cardio, where(is.numeric)) |> 
   mutate(cardio = factor(cardio, levels=c(0,1), labels=c("Нет", "Да"))) |>
   melt(id=c('id','cardio')) |>
   ggplot()+
+  #geom_beeswarm(aes(x=cardio, y=value), method = "hex") +
   geom_boxplot(aes(x=cardio, y=value, fill = cardio), outliers = FALSE, show.legend=FALSE)+
-  #geom_beeswarm(aes(x=cardio, y=value))+
   scale_fill_brewer(palette = "YlOrRd") +
   scale_x_discrete(name = "Наличие ССЗ")+
   facet_wrap(vars(variable), scales = "free_y")
@@ -296,7 +299,8 @@ cleaned_data |>
 
 
 ```
-Для визуализации пропорций подходят отнормированные столбики, наглядно демонстрирующие доли каждой категории между группами. 
+
+**Для визуализации пропорций подходят отнормированные столбики, наглядно демонстрирующие разницу в относительных долях каждой категории между группами.** 
 
 # Статистические оценки
 
@@ -313,7 +317,8 @@ cleaned_data[sample(5000),] |>
 
 
 ```
-Ответ: Ни одна из численных переменных не имеет нормальное распределение.
+
+**Ответ:** Ни одна из численных переменных не имеет нормальное распределение.
 
 2) Постройте для каждой количественной переменной QQ-плот. Отличаются ли выводы от теста Шапиро-Уилка? Какой метод вы бы предпочли и почему?
 
@@ -328,13 +333,13 @@ cleaned_data[sample(5000),] |>
 
 
 ```
+
 Согласно QQ-графику приближенное к нормальному распределению имеют переменные возраст и рост. Предпочла бы графический метод, так как у него нет ограничений на объем выборки и визуально можно оценить "нормальность".
 
 
 3) Ниже напишите, какие ещё методы проверки на нормальность вы знаете и какие у них есть ограничения.
 
-**Напишите текст здесь**
-Еще есть метод Колмогорова-Смирнова, метод Андерсона-Дарлинга, метод Д'Агостино-Пирсона. Метод Колмогорова-Смирнова считается более подходящим для больших выборок, метод Андерсона-Дарлинга является неспецифическим к форме распределения, метод Д'Агостино следует применять, когда нет сведений об альтернативном распределении. Он показывает хорошую мощность против большого спектра альтернатив, по мощности немного уступая критерию Шапиро - Уилка.
+**Еще есть метод Колмогорова-Смирнова, метод Андерсона-Дарлинга, метод Д'Агостино-Пирсона. Метод Колмогорова-Смирнова считается более подходящим для больших выборок, метод Андерсона-Дарлинга является неспецифическим к форме распределения, метод Д'Агостино следует применять, когда нет сведений об альтернативном распределении. Он показывает хорошую мощность против большого спектра альтернатив, по мощности немного уступая критерию Шапиро - Уилка.**
 
 
 
@@ -359,9 +364,9 @@ chisq.test(cleaned_data$alco, cleaned_data$cardio)
 chisq.test(cleaned_data$physical_activity, cleaned_data$cardio)
 
 ```
-Для нормально распределенных переменных был выбран t-test.
+**Для нормально распределенных переменных был выбран t-test.
 Для ненормально распределенных переменных был выбран критерий критерий Манна-Уитни.
-Для категориальных переменных был выбран критерий хи-квадрат.
+Для категориальных переменных был выбран критерий хи-квадрат.**
 
 # Далее идут **необязательные** дополнительные задания, которые могут принести вам дополнительные баллы в том числе в случае ошибок в предыдущих
 
@@ -370,25 +375,75 @@ chisq.test(cleaned_data$physical_activity, cleaned_data$cardio)
 1) Создайте корреляционную матрицу с визуализацией и поправкой на множественные сравнения. Объясните, когда лучше использовать корреляционные матрицы и в чём минусы и плюсы корреляционных исследований.
 
 ```{r, fig.width=10, fig.height=10}
-library(corrplot)
-library(corrr)
+
 cleaned_data |> 
   select(where(is.numeric) & !c(id)) |>
-  cor() |> corrplot(method = 'color', col = COL2('RdBu', 10))
+  psych::corr.test(adjust = "bonferroni") -> cor_results
+  
+corrplot(cor_results$r, method = 'color', col = COL2('RdBu', 10))
   
 
 
 ```
+
+
+**Корреляционные матрицы удобно использовать для обобщения большого набора данных с большим числом количественных и ранговых переменных.
+Преимущества: результаты корреляционного анализа служат основой для идей и гипотез о взаимосвязях в данных. 
+Недостатки: корреляционный анализ не позволяет определить причину взаимосвязи между двумя переменными.**
+
+
 
 ## Моделирование
 
 1) Постройте регрессионную модель для переменной **cardio**. Опишите процесс построения
 
 ```{r}
+library(caTools)
+library(ROCR)
+
+split <- sample.split(cleaned_data, SplitRatio = 0.8)
+
+ 
+train_reg <- subset(cleaned_data, split == "TRUE")
+test_reg <- subset(cleaned_data, split == "FALSE")
+
+# Training model
+logistic_model <- glm(cardio ~ age + gender + height + weight + systolic_blood_pressure + diastolic_blood_pressure + cholesterol + glucose + smoke + alco + physical_activity,
+                    data = train_reg,
+                    family = "binomial")
+logistic_model
+ 
+# Summary
+summary(logistic_model)
+
+predict_reg <- predict(logistic_model,
+                       test_reg, type = "response")
+# ROC-AUC Curve
+ROCPred <- prediction(predict_reg, test_reg$cardio)
+ROCPer <- performance(ROCPred, measure = "tpr",
+                      x.measure = "fpr")
+auc <- performance(ROCPred, measure = "auc")
+auc <- auc@y.values[[1]]
+ 
+# Plotting curve
+plot(ROCPer, colorize = TRUE,
+     print.cutoffs.at = seq(0.1, by = 0.1),
+     main = "ROC CURVE")
+abline(a = 0, b = 1)
+ 
+auc <- round(auc, 4)
+legend(.6, .4, auc, title = "AUC", cex = 1)
 
 
 
 ```
+
+
+**Процесс построения модели:
+1. Выбор линейной либо логистической регрессии.
+2. Разделение данных на обучающую и тестовую выборки.
+3. Построение модели.
+4. Оценка модели на тестовой выборке.**
 
 
 
