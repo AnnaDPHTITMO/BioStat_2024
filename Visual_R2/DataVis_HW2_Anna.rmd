@@ -1,0 +1,353 @@
+---
+title: "BI_retraining_basic_datavis_2024_HW2"
+author: "Anna Andreychenko"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, error = FALSE, fig.width=16, fig.height=10)
+
+library(tidyverse)
+library(ggpubr)
+library(reshape2)
+```
+
+## Загрузка данных
+
+```{r}
+hogwarts <- read_csv("data/hogwarts_2024.csv")
+hogwarts |> head()
+```
+
+### Вводим факторные переменные
+
+```{r}
+
+# Changing some variables type to factors
+hogwarts <- hogwarts |> mutate(
+  across(c(house, course, sex, wandCore, bloodStatus), ~ as.factor(.x))
+)
+```
+
+### Пересоздание theme_custom
+
+```{r}
+theme_custom <- theme(
+    panel.background = element_rect(fill = "white"),
+    plot.title = element_text(size = 30, hjust = 0.5),
+    plot.subtitle = element_text(size = 25, hjust = 0.5),
+    strip.text = element_text(size = 20),
+    axis.text = element_text(size = 20),
+    axis.title = element_text(size = 25),
+    legend.title = element_text(size = 25),
+    legend.text = element_text(size = 20)
+  )
+
+# А еще мы создаем функцию для стандартной ошибки среднего
+se <- function(x){
+  sd(x, na.rm=TRUE)/sqrt(length(x))
+}
+```
+
+# Решения заданий
+
+## Диаграммы рассеяния (скаттерплоты)
+
+### Задание 1
+
+```{r}
+hogwarts |> 
+  ggplot(aes(x= result,
+                 y = `Herbology exam`))+
+  geom_point(size =3,
+             shape = 21,
+             colour = "blue",
+             fill = "lightgreen",
+             stroke = 1.5)+
+  geom_smooth(se = FALSE,
+              method = "lm")+
+  labs(x = "Годовой балл",
+       y = "Экзамен по травологии")+
+  theme_custom
+```
+
+**Интерпретация: Годовой балл прямопропорционален оценке за экзамен по травологии**
+
+### Задание 2
+
+```{r}
+hogwarts |> select(result, `Herbology exam`, `Muggle studies exam`, `Divinations exam`, `Potions exam`, house) |>
+  reshape2::melt(id=c('result','house')) |>
+  ggplot()+
+  geom_point(aes(y= result,
+                 x = value, fill = house), 
+             size =3,
+             shape = 21)+
+  geom_smooth(aes(y= result,
+                 x = value),
+              se = FALSE,
+              method = "lm")+
+  scale_fill_manual(name = "Факультет",
+                    values = c("Gryffindor" = "#C50000", 
+                             "Hufflepuff" = "#ECB939", 
+                             "Ravenclaw" = "#41A6D9", 
+                             "Slytherin" = "#1F5D25"))+
+  labs(y = "Годовой балл",
+       x = "Результат экзамена")+
+  facet_wrap(vars(variable))+
+  theme_custom
+
+```
+
+**Интерпретация: Годовой балл прямопропорционален оценке за экзамен по травологии, магловедению и прорицанием. Годовой балл слегка обратно пропорционален оценке за экзамен по зельюварению.**
+
+### Задание 3
+
+```{r}
+hogwarts |> select(result, `Herbology exam`, `Muggle studies exam`, `Divinations exam`, `Potions exam`, house, bloodStatus) |>
+  melt(id=c('result','house','bloodStatus')) |>
+  ggplot()+
+  geom_point(aes(y= result,
+                 x = value,
+                 fill = house), 
+             size =3,
+             shape = 21)+
+  geom_smooth(aes(y= result,
+                 x = value,
+                 color = bloodStatus),
+              se = FALSE,
+              method = "lm")+
+  scale_fill_manual(name = "Факультет",
+                    values = c("Gryffindor" = "#C50000", 
+                             "Hufflepuff" = "#ECB939", 
+                             "Ravenclaw" = "#41A6D9", 
+                             "Slytherin" = "#1F5D25"))+
+   scale_color_discrete(name = "Статус по крови")+
+  labs(y = "Годовой балл",
+       x = "Результат экзамена")+
+  facet_wrap(vars(variable))+
+  theme_custom
+
+```
+
+## geom_col и вещи вокруг него
+
+### Задание 1
+```{r}
+hogwarts |> 
+  rowwise() |>
+  mutate(score_1st = sum(c_across(c(21:37)))) |>
+  group_by(bloodStatus) |> 
+  summarise(bSPoints_1st = sum(score_1st)) |>
+  ggplot()+
+  geom_col(aes(x = bloodStatus,
+               y = bSPoints_1st,
+               fill = bloodStatus), show.legend=FALSE)+
+  labs(x = "Статус по крови", y = "Баллы за 1ый семестр")+
+  theme_custom
+  
+```
+
+ **Гипотеза: студенты смешанных кровей учились в первом семестре успешнее, чем остальные**
+ 
+ 
+### Задание 2
+
+```{r}
+hogwarts |> 
+  rowwise() |>
+  mutate(score_1st = sum(c_across(c(21:37)))) |>
+  group_by(bloodStatus) |> 
+  summarise(bSPoints_1st = sum(score_1st), N_st = length(score_1st)) |>
+  ggplot()+
+  geom_col(aes(x = fct_reorder(bloodStatus, bSPoints_1st, .desc = T),
+               y = bSPoints_1st,
+               fill = bloodStatus), show.legend=FALSE) +
+  geom_label(aes(x = fct_reorder(bloodStatus, bSPoints_1st, .desc = T),
+               y = bSPoints_1st,
+               label = N_st),
+             size = 10,
+            vjust= 0.1) +
+  labs(x = "Статус по крови", y = "Баллы за 1ый семестр")+
+  theme_custom
+  
+```
+
+**Интерпретация графика: набранное число баллов растет вместе с увеличением количества студентов. Не соотносится с гипотезой Задания 1**
+
+### Задание 3
+
+```{r}
+hogwarts |> 
+  rowwise() |>
+  mutate(score_1st = sum(c_across(c(21:37)))) |>
+  group_by(bloodStatus, sex) |> 
+  summarise(bSPoints_1st = sum(score_1st), N_st = length(score_1st)) |>
+  ggplot()+
+  geom_col(aes(y = fct_reorder(sex, bSPoints_1st, .desc = T),
+               x = bSPoints_1st,
+               fill = bloodStatus), position = "dodge2"
+           ) +
+  scale_fill_discrete(name="Статус по крови") +
+  geom_label(aes(y = fct_reorder(sex, bSPoints_1st, .desc = T),
+               x = bSPoints_1st,
+               fill = bloodStatus,
+               label = N_st),
+             size = 10,
+            hjust= 0.1,
+            position = position_dodge(0.9),
+            show.legend = FALSE) +
+  scale_x_continuous(breaks=seq(0,9000,1000), labels = paste0(seq(0,9000,1000), " p."), limits=c(-50,10000), )+
+
+  labs(title ="Суммарный бал студентов за первый семестр",
+       subtitle = "в зависимости от пола и статуса по крови",
+       y = "Пол",
+       x = "Количество баллов")+
+  theme_custom+
+  theme(axis.text.x = element_text(size = 20, angle = 45)) -> sex_bloodStatus_1stSem
+ggsave("Task3_plot.png", sex_bloodStatus_1stSem, width=15, height=10, units="in", dpi=300)
+sex_bloodStatus_1stSem
+  
+```
+
+### Задание 4
+
+**Функция coord_flip() полезна, когда геом и статистики не поддерживают опцию orientation, для изменения показа данных от y зависит от x к x зависит от y. Плюсы: можно повернуть уже созданный график, не меняя код создания графика. Минусы: применим только для декартовой системы координат.**
+
+## Разное
+
+### Задание 1
+```{r, fig.height=30, fig.width= 15}
+plot1 <- hogwarts |> select(c("Potions exam", "Study of ancient runes exam")) |>
+  pivot_longer(cols = c("Potions exam", "Study of ancient runes exam"))|>
+  ggplot()+
+  geom_boxplot( aes(x = name, y = value, fill = name))+
+  scale_fill_discrete(name="Экзамен", guide = guide_legend(theme = theme(
+      legend.direction = "horizontal",
+      legend.title.position = "top",
+      legend.text.position = "bottom",
+      legend.text = element_text(hjust = 1.5, vjust = 0)
+    )))+
+  labs(x="Экзамен", y="Оценки")+
+  theme_custom
+  
+ 
+plot2 <- hogwarts |>
+  ggplot()+
+  geom_point(aes(x = `Potions exam`, y = `Study of ancient runes exam`,
+                 fill = house),
+             size =3,
+             shape = 21,
+             stroke = 1.5)+
+  scale_fill_manual(values = c("Gryffindor" = "#C50000", 
+                             "Hufflepuff" = "#ECB939", 
+                             "Ravenclaw" = "#41A6D9", 
+                             "Slytherin" = "#1F5D25"))+
+  labs(title="Зависимость оценок двух экзаменов")+
+  theme_custom 
+
+
+plot3 <- hogwarts |> select(c("Potions exam", "Study of ancient runes exam")) |>
+  pivot_longer(cols = c("Potions exam", "Study of ancient runes exam"))|>
+  ggplot()+
+  geom_density(aes(x = value, fill = name),
+               alpha = 0.5, 
+               bins = ceiling(log2(nrow(hogwarts))+1)
+               )+
+  labs(x="Оценки", y = "Плотность распределения")+
+  theme_custom
+
+
+p1 <- ggarrange(plotlist = list(plot1, plot3), nrow=1, ncol=2, common.legend=TRUE, legend = c("top"))
+
+ggarrange(plotlist = list(p1, plot2), nrow=2, ncol=1)
+```
+
+### Задание 2
+```{r}
+means <- aggregate(`Potions exam` ~ bloodStatus, hogwarts, mean)
+means[,2]<- round(means[,2],0)
+
+plot4 <- hogwarts |> 
+  ggplot(aes(x = fct_relevel(bloodStatus, c("muggle-born","pure-blood","half-blood")), y = `Potions exam`, fill = bloodStatus))+
+  geom_boxplot(notch=T )+
+  stat_summary(fun=mean, colour="darkred", geom="point", 
+               shape=18, size=6, show.legend=FALSE) + 
+  geom_text(data = means,
+            aes(label = `Potions exam`, y = `Potions exam` + 0.08),
+            vjust = -1.0,
+            size = 8)+
+  labs(
+  #title= str_wrap("Распределение оценок за экзамен по зельеварению в зависимости от происхождения", 60),
+   #    subtitle =  "средние значения показаны красными ромбами",
+       x = "Статус по крови",
+       y="Балл")+
+  theme_custom
+
+plot5 <- hogwarts |> 
+  ggplot()+
+  geom_density(aes(x = `Potions exam`, fill = bloodStatus),
+               alpha = 0.5, 
+               bins = ceiling(log2(nrow(hogwarts))+1)
+               )+
+  labs(x="Оценки", y = "Плотность распределения")+
+  theme_custom
+
+ggarrange(plotlist = list(plot4, plot5), nrow=1, ncol=2, common.legend=TRUE, legend = c("top"))
+
+```
+
+**Интерпретация: распределения оценок у чистокровных и полукровных близки к симметричному (среднее~медиана), а у маглорожденных оно смещено влево (среднее > медианы) **
+
+## Воспроизведение графика
+
+### Задание1
+```{r}
+mean2 <- hogwarts |> select(result, house) |> group_by(house) |>
+  summarise(mean=mean(result))
+
+
+hogwarts |> select(result, house, sex) |>
+  mutate(sex = factor(sex, levels=c("female","male"), labels=c("Девочки", "Мальчики"))) |>
+  melt(id=c('house','sex')) |>
+  ggplot()+
+  geom_violin(aes(x= house,
+                 y = value,
+                 fill = house))+
+  geom_boxplot(aes(x= house,
+                 y = value),
+               color="grey",
+               fill="white",
+               width=0.05)+
+  geom_point(aes(x = house, y =mean), data = mean2, colour="black", geom="point", shape=18, size=12)+
+    geom_point(aes(x = house, y =mean), data = mean2, colour="darkred", geom="point", shape=18, size=9)+
+  scale_fill_manual(name = "Факультет",
+                    values = c("Gryffindor" = "#C50000", 
+                             "Hufflepuff" = "#ECB939", 
+                             "Ravenclaw" = "#41A6D9", 
+                             "Slytherin" = "#1F5D25"),
+                    labels=c("Gryffindor" ="Гриффиндор", 
+                              "Hufflepuff" = "Пуффендуй", 
+                              "Ravenclaw" = "Равенкло", 
+                              "Slytherin" = "Слизерин"))+
+  
+  geom_hline(yintercept = 0, linetype = 'dashed', linewidth = 2.0, col = 'pink')+
+  facet_wrap(vars(sex))+
+  labs(title = "Баллы студентов Хогвартса",
+       subtitle = "Распределение числа баллов у студентов различных факультетов Хогвартса в 2023-2024 учебном году",
+       caption = "Источник: нездоровая фантазия автора лекции",
+       y="Количество очков")+
+  theme_custom +
+  theme(plot.title = element_text(size=30),
+        plot.subtitle = element_text(size=22, colour = "#CC9900"),
+        legend.text = element_text(face="italic"),
+        caption.text = element_text(size=30))+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+
+  theme(text=element_text(family="serif"))+
+  theme(legend.position=c(.5,.1))
+  
+
+```
