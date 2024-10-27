@@ -36,7 +36,7 @@ dataframe %>%
 
 В вашем варианте нужно использовать датасеты cardio_train_big или cardio_train_not_too_big.
 
-```{r, echo = FALSE}
+```{r}
 
 read.csv2("data/raw/cardio_train_big.csv", dec=".") -> original_data
 original_data |> head()
@@ -46,7 +46,7 @@ original_data |> head()
 
 # Выведите общее описание данных
 
-```{r, echo = FALSE}
+```{r}
 glimpse(original_data)
 ```
 
@@ -71,7 +71,7 @@ sum(is.na(original_data))
 
 6) Присвойте получившийся датасет переменной "cleaned_data".
 
-```{r, echo = FALSE}
+```{r}
 
 original_data[which(rowMeans(!is.na(original_data)) > 0.5), which(colMeans(!is.na(original_data)) > 0.2)] %>%
   rename_with(function(x) x %>% 
@@ -102,7 +102,7 @@ rm(temp, outliers1, col, outlier)
 
 # Сколько осталось переменных?
 
-```{r, echo = FALSE}
+```{r}
 cleaned_data |> ncol()
 
 
@@ -110,7 +110,7 @@ cleaned_data |> ncol()
 
 # Сколько осталось случаев?
 
-```{r, echo = FALSE}
+```{r}
 cleaned_data |> nrow()
 
 
@@ -118,19 +118,18 @@ cleaned_data |> nrow()
 
 # Есть ли в данных идентичные строки?
 
-```{r, echo = FALSE}
+```{r}
 print("Кол-во идентичных строк c учетом id")
-cleaned_data[duplicated(cleaned_data) | duplicated(cleaned_data, fromLast=TRUE),] |> nrow()
-
+sum(as.numeric(duplicated(cleaned_data))) 
 print("Кол-во идентичных строк без учета id")
-cleaned_data[duplicated(cleaned_data[,-1]) | duplicated(cleaned_data[,-1], fromLast=TRUE),] |> nrow()/2
+sum(as.numeric(duplicated(cleaned_data[,-1]))) 
 
 
 ```
 
 # Сколько всего переменных с пропущенными значениями в данных и сколько пропущенных точек в каждой такой переменной?
 
-```{r, echo = FALSE}
+```{r}
 #
 #cleaned_data[2:5,3:4] <- NA
 print("Кол-во переменных с пропущенными значениями")
@@ -168,7 +167,7 @@ colSums(is.na(cleaned_data[sapply(cleaned_data, anyNA)]))
 
 1.10) 95% ДИ для среднего - задание со звёздочкой.
 
-```{r, echo = FALSE}
+```{r}
 statistics <- list(
       `_Количество значений` = ~length(.x) %>% as.character(),
       `_Количество пропущенных значений` = ~sum(is.na(.x)) %>% as.character(),
@@ -212,7 +211,7 @@ cleaned_data %>%
 
 1.3) 95% ДИ для доли внутри группы - задание со звёздочкой.
 
-```{r, echo = FALSE}
+```{r}
 CI_categ <- function(t){
 tb <- prop.table(table(t))
 n <- length(t)
