@@ -1,0 +1,113 @@
+---
+title: "Homework"
+author: "Anna Andreychenko"
+date: "`r Sys.Date()`"
+output: 
+   html_document:
+       toc: true
+       toc_float:
+           collapsed: false
+           smooth_scroll: true
+       theme: flatly
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+theme_set(theme_minimal())
+
+```
+
+# 1. Загружаем и изучаем данные
+
+```{r}
+raw_data <- readRDS("C:\\Users\\anna.andreychenko\\Documents\\R\\BioStat_2024\\Visual_Advanced_HW\\very_low_birthweight.RDS")
+
+summary(raw_data)
+
+```
+
+```{r}
+
+raw_data %>% 
+  skimr::skim()
+```
+
+## 1.1 Удаление колонок с пропусками больше 100, затем строк с пропущенными значениями
+
+```{r}
+cleaned_data <- raw_data %>% 
+  select (-which(colSums(is.na(.))>100)) %>%
+  na.omit()
+
+cleaned_data %>% 
+  skimr::skim()
+```
+
+# 2. Графики плотности распределения. Удаление выбросов
+
+```{r, fig.width=14, fig.height = 14}
+cleaned_data |> 
+  select(where(is.numeric)) |> 
+  pivot_longer(cols=everything()) |>
+  ggplot()+
+  geom_density(aes(x=value), fill = "orange", 
+               colour = "grey49")+
+  theme_bw()+
+  facet_wrap(vars(name), scales = "free")
+```
+
+```{r, fig.width=14, fig.height = 14}
+#cleaned_data |> 
+#  select(where(is.numeric)) |> 
+#  pivot_longer(cols=everything()) |>
+#  ggplot()+
+#  geom_boxplot(aes(y=value), fill = "orange", 
+#               colour = "grey49")+
+#  theme_bw()+
+#  facet_wrap(vars(name), scales = "free")
+
+
+
+```
+
+  Явные выбросы у переменной hospstay. Удалим их.
+
+``` {r, fig.width=14, fig.height = 14}
+
+cleaned_data_1 <- cleaned_data[-which(cleaned_data$hospstay %in% boxplot.stats(cleaned_data$hospstay)$out),]
+
+#cleaned_data_1 |> 
+#  select(where(is.numeric)) |> 
+#  pivot_longer(cols=everything()) |>
+#  ggplot()+
+#  geom_density(aes(x=value), fill = "lightgreen", 
+#               colour = "grey49")+
+#  theme_bw()+
+#  facet_wrap(vars(name), scales = "free")
+
+#cleaned_data_1 |> 
+#  select(where(is.numeric)) |> 
+#  pivot_longer(cols=everything()) |>
+#  ggplot()+
+#  geom_boxplot(aes(y=value), fill = "lightgreen", 
+#               colour = "grey49")+
+#  theme_bw()+
+#  facet_wrap(vars(name), scales = "free")
+
+```
+
+ Раскрасим графики плотности по переменной ‘inout’.
+
+```{r, fig.width=14, fig.height = 14}
+cleaned_data_1 |> 
+  select(inout, where(is.numeric)) |> 
+  reshape2::melt(id=c('inout')) |>
+  ggplot()+
+  geom_density(aes(x=value, fill=inout), alpha=0.5, colour = "grey49")+
+  theme_bw()+
+  facet_wrap(vars(variable), scales = "free")
+```
+
