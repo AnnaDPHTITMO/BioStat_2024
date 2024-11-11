@@ -13,7 +13,7 @@ output:
 
 ```{r setup, include=FALSE}
 
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 
 library(tidyverse)
 theme_set(theme_minimal())
@@ -24,6 +24,10 @@ theme_set(theme_minimal())
 
 ```{r}
 raw_data <- readRDS("C:\\Users\\anna.andreychenko\\Documents\\R\\BioStat_2024\\Visual_Advanced_HW\\very_low_birthweight.RDS")
+
+# добавим id
+
+raw_data <- raw_data %>% mutate(id = 1:nrow(raw_data))
 
 summary(raw_data)
 
@@ -48,7 +52,19 @@ cleaned_data %>%
 
 # 2. Графики плотности распределения. Удаление выбросов
 
+Сначала конвертируем переменные twn, apg1, vent, pneumo, pda, cld, dead, id в факторы.
+
 ```{r, fig.width=14, fig.height = 14}
+cleaned_data <- cleaned_data %>%
+  mutate(
+    across(c(twn, apg1, vent, pneumo, pda, cld, dead, id), ~ as.factor(.x))
+  )
+
+cleaned_data %>% 
+  skimr::skim()
+
+print("Построим графики плотности распределения количественных переменных")
+
 cleaned_data |> 
   select(where(is.numeric)) |> 
   pivot_longer(cols=everything()) |>
@@ -73,11 +89,15 @@ cleaned_data |>
 
 ```
 
-  Явные выбросы у переменной hospstay. Удалим их.
+*Явные выбросы у переменной hospstay: отрицательные значения и значения больше 300 . Удалим их.*
 
-``` {r, fig.width=14, fig.height = 14}
+```{r, fig.width=14, fig.height = 14}
 
-cleaned_data_1 <- cleaned_data[-which(cleaned_data$hospstay %in% boxplot.stats(cleaned_data$hospstay)$out),]
+#cleaned_data_1 <- cleaned_data[-which(cleaned_data$hospstay %in% boxplot.stats(cleaned_data$hospstay)$out),]
+
+cleaned_data_1 <- cleaned_data[-which(cleaned_data$hospstay > 300 |cleaned_data$hospstay < 0),]
+
+#cleaned_data_1 <- cleaned_data[-which(cleaned_data$hospstay < 0),]
 
 #cleaned_data_1 |> 
 #  select(where(is.numeric)) |> 
@@ -99,7 +119,7 @@ cleaned_data_1 <- cleaned_data[-which(cleaned_data$hospstay %in% boxplot.stats(c
 
 ```
 
- Раскрасим графики плотности по переменной ‘inout’.
+Раскрасим графики плотности по переменной ‘inout’.
 
 ```{r, fig.width=14, fig.height = 14}
 cleaned_data_1 |> 
@@ -111,3 +131,311 @@ cleaned_data_1 |>
   facet_wrap(vars(variable), scales = "free")
 ```
 
+# 3. Тест на сравнение значений колонки ‘lowph’ между группами в переменной inout.
+
+Выбран t_test с методом Уэлча, т.к. минимальное количество в группе 80 и дисперсии неизвестны .
+
+```{r}
+library(rstatix)
+cleaned_data_1 %>% t_test(lowph ~ inout, var.equal=FALSE, alternative = "two.sided")
+
+t.test(cleaned_data_1$lowph ~ cleaned_data_1$inout, var.equal=FALSE, alternative = "two.sided")
+
+```
+
+*Интерпретация:* т.к. среднее в группе transported ниже, то можно предположить, что в данной группе более низкая выживаемость.
+
+# 4.Новый датафрейм
+
+## 4.1 с континуальными данными. Корреляционный анализ.
+
+```{r}
+cont_data <- cleaned_data_1 %>%
+  select(where(is.numeric), -c("birth", "year", "exit"), c("id"))
+
+library(corrplot)
+cont_data %>%
+  select(-c("id")) %>%
+  cor() %>% 
+  corrplot(
+    order = 'hclust'
+  )    
+
+library(GGally)
+lowerFn <- function(data, mapping, method = "lm", ...) {
+  p <- ggplot(data = data, mapping = mapping) +
+    # geom_point(colour = "blue") +
+    geom_smooth(method = method, color = "red", ...)
+  p
+}
+
+ggpairs(
+  cont_data %>%
+  select(-c("id")), 
+  progress = F,
+  lower = list(continuous = wrap(lowerFn, method = "lm")),
+  diag = list(continuous = wrap("barDiag", colour = "blue")),
+  upper = list(continuous = wrap("cor", size = 5))
+)
+
+
+```
+
+## 4.2 с ранговыми данными. Корреляционный анализ.
+
+```{r, fig.width=14}
+rang_data <- cleaned_data_1 %>%
+  select(c("apg1","twn","vent","pneumo","pda","cld","dead", "id"))
+
+library(corrplot)
+rang_data %>% select(-c("id")) %>%
+  mutate_all(as.numeric) %>%
+  cor(method="spearman") %>% 
+  corrplot(
+    order = 'hclust'
+  )
+
+
+library(corrr)
+rang_data %>% select(-c("id")) %>%
+  mutate_all(as.numeric) %>%
+  cor(method="spearman") %>% 
+  network_plot(legend=c("range"),min_cor = .0)
+
+#library(GGally)
+
+#lowerFn <- function(data, mapping, ...) {
+#  p <- ggplot(data = data, mapping = mapping) +
+#     geom_point(colour = "blue")+
+#    geom_count()
+#  p
+#}
+#ggpairs(
+#  rang_data %>% mutate_all(as.numeric), 
+#  progress = F,
+#  lower = list(continuous = wrap(lowerFn)),
+#  diag = list(continuous = wrap("barDiag", colour = "blue")),
+
+#)
+
+
+```
+
+# 5. Иерархическая кластеризация
+
+## 5.1 Континуальные данные
+
+```{r }
+library(factoextra)
+
+cont_data_scaled <- cont_data %>%
+  select(-c("id"))%>% 
+  scale()
+
+get_clust_tendency(cont_data_scaled, 
+                   n = nrow(cont_data_scaled)-1)[1]
+
+```
+
+Оценим кластеризацию:
+ 
+```{r}
+cont_data_dist <-  cont_data_scaled %>%
+  get_dist(method = "pearson")
+
+cont_data_clust <- cont_data_dist %>%
+  hclust(method = "ward.D2") 
+
+# Cophentic distance
+cont_data_dist.coph <- cophenetic(cont_data_clust)
+# Корреляция
+cor(cont_data_dist, cont_data_dist.coph)
+
+
+```
+
+```{r fig.height = 7, fig.width = 5}
+
+cont_data_clust %>%
+  fviz_dend(horiz= T,
+            cex = 0.6,
+            k = 3, # Задаём число кластеров
+            k_colors = c("#2E9FDF", "#E7B800", "#FC4E07"),
+            color_labels_by_k = TRUE, # Соотнести цвета с кластерами
+            rect = TRUE # Добавить "квадратик" вокруг групп
+            )
+
+```
+ 
+ 
+ 
+## 5.2 Ранговые данные
+
+```{r }
+library(factoextra)
+rang_data_scaled <- rang_data %>%
+  select(-c("id")) %>% mutate_all(as.numeric) %>%
+  scale()
+
+
+get_clust_tendency(rang_data_scaled, 
+                   n = nrow(rang_data_scaled)-1)[1]
+
+```
+
+Оценим кластеризацию:
+ 
+```{r}
+
+rang_data_dist <-  rang_data_scaled %>%
+  get_dist(method = "spearman")
+
+rang_data_clust <- rang_data_dist %>%
+  hclust(method = "ward.D2") 
+
+# Cophentic distance
+rang_data_dist.coph <- cophenetic(rang_data_clust)
+# Корреляция
+cor(rang_data_dist, rang_data_dist.coph)
+
+
+```
+
+  
+```{r fig.height = 7, fig.width = 5}
+rang_data_clust %>%
+  fviz_dend(horiz= T,
+            cex = 0.6,
+            k = 3, # Задаём число кластеров
+            k_colors = c("#2E9FDF", "#E7B800", "#FC4E07"),
+            color_labels_by_k = TRUE, # Соотнести цвета с кластерами
+            rect = TRUE # Добавить "квадратик" вокруг групп
+            )
+
+```
+
+
+
+# 6 Heatmap
+
+## 6.1 Континуальные данные
+
+```{r}
+library(pheatmap)
+
+pheatmap(cont_data_scaled, 
+         show_rownames = FALSE, 
+         clustering_distance_rows = cont_data_dist,
+         clustering_method = "ward.D2", 
+         cutree_rows = 3,
+         cutree_cols = length(colnames(cont_data_scaled)),
+         angle_col = 45, 
+         main = "Dendrograms for clustering rows and columns with heatmap")
+```
+
+*Интерпретация:* Длительное пребывание в госпитале ассоциировано с низким весом при рождении и ранними родами.
+
+## 6.2 Ранговые данные
+
+```{r}
+library(pheatmap)
+
+pheatmap(rang_data_scaled, 
+         show_rownames = FALSE, 
+         clustering_distance_rows = rang_data_dist,
+         clustering_method = "ward.D2", 
+         cutree_rows = 3,
+         cutree_cols = length(colnames(rang_data_scaled)),
+         angle_col = 45, 
+         main = "Dendrograms for clustering rows and columns with heatmap")
+```
+
+*Интерпретация:* В группе со смертельным исходом более низкий балл по шкале апгар, шкала апгар не ассоциирована с количеством рожденных детей.
+
+# 7. PCA
+
+## 7.1 Континуальные данные
+
+```{r}
+cont_data.pca <- prcomp(cont_data %>%
+  select(-c("id")), 
+                scale = T) 
+summary(cont_data.pca)
+
+fviz_eig(cont_data.pca, 
+         addlabels = T, 
+         ylim = c(0, 50))
+
+fviz_contrib(cont_data.pca, choice = "var", axes = 1, top = 24)
+fviz_contrib(cont_data.pca, choice = "var", axes = 2, top = 24) 
+fviz_contrib(cont_data.pca, choice = "var", axes = 3, top = 24) 
+fviz_pca_var(cont_data.pca, col.var = "contrib")
+
+```
+
+*Интерпретация:* 3 компоненты обуславливают 83% дисперсии данных. В первую компоненту основной вклад вносят переменные: вес и гестационный возраст при рождении; во вторую компоненту основной вклад вносят число тромбоцитов; в третью компоненту основной вклад вносит минимальное значение pH и срок госпитализации.
+
+# 8. PCA график
+
+```{r}
+
+cont_data_1 <- left_join(cont_data, cleaned_data_1 %>% select(c("id","dead")), by = c("id"))
+
+ggbiplot::ggbiplot(cont_data.pca, 
+         scale=0, 
+         groups = as.factor(cont_data_1$dead), 
+         ellipse = T,
+         alpha = 0.2,
+         varname.size = 5,
+         varname.color = "darkgreen") +
+  labs(fill = "dead", color = "dead") +
+  theme_minimal()
+
+
+
+```
+
+# 9. PCA график plotly
+
+```{r, fig.height=10, fig.width=10}
+
+library(plotly)
+
+
+p1 <- ggbiplot::ggbiplot(cont_data.pca,
+                         #labels = cont_data_1$id,
+                         #label = T,
+                         scale = 0,
+                         groups = as.factor(cont_data_1$dead), 
+                         ellipse = T,
+                         alpha = 0.2,
+                         varname.size = 5,
+                         varname.color = "darkgreen") +
+  #labs(fill = "dead", color = "dead") +
+  theme_minimal()
+
+p1 <- p1 + geom_point(data = p1$data, aes(x = xvar, y = yvar, color = groups, text = cont_data_1$id), alpha=0)
+
+p1 <- ggplotly(p1, tooltip = c("text"))
+
+n_cases <- length(unique(cont_data_1$dead))
+for (i in 1:n_cases) {
+  p1$x$data[[i]]$name <- i-1
+  p1$x$data[[i]]$legendgroup <- i
+  p1$x$data[[i + n_cases]]$name <- i-1
+  p1$x$data[[i + n_cases]]$legendgroup <- i
+  p1$x$data[[i + n_cases]]$showlegend <- FALSE
+}
+
+p1$x$data[[3]]$line$width <- 1.5
+p1$x$data[[3]]$line$width <- 1.5
+
+p1$x$data[[6]]$x <- p1$x$data[[6]]$x +0.1*sign(p1$x$data[[6]]$x)
+p1$x$data[[6]]$y <- p1$x$data[[6]]$y +0.1*sign(p1$x$data[[6]]$y)
+
+p1$x$layout$legend$title$text <- "dead"
+
+p1
+```
+
+# 10. Интерпретация PCA анализа
