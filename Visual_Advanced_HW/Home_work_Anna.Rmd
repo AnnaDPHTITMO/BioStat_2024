@@ -24,13 +24,13 @@ theme_set(theme_minimal())
 # 1. Загружаем и изучаем данные
 
 ```{r}
-raw_data <- readRDS("C:\\Users\\anna.andreychenko\\Documents\\R\\BioStat_2024\\Visual_Advanced_HW\\very_low_birthweight.RDS")
+raw_data <- readRDS("very_low_birthweight.RDS")
 
 # добавим id
 
 raw_data <- raw_data %>% mutate(id = 1:nrow(raw_data))
 
-summary(raw_data)
+#summary(raw_data)
 
 ```
 
@@ -47,24 +47,28 @@ cleaned_data <- raw_data %>%
   select (-which(colSums(is.na(.))>100)) %>%
   na.omit()
 
-cleaned_data %>% 
-  skimr::skim()
+#cleaned_data %>% 
+#  skimr::skim()
 ```
 
 # 2. Графики плотности распределения. Удаление выбросов
 
-Сначала конвертируем переменные twn, apg1, vent, pneumo, pda, cld, dead, id в факторы.
+Сначала конвертируем переменные apg1, twn, vent, pneumo, pda, cld, dead, id в факторы.
 
-```{r, fig.width=14, fig.height = 14}
+```{r}
 cleaned_data <- cleaned_data %>%
   mutate(
-    across(c(twn, apg1, vent, pneumo, pda, cld, dead, id), ~ as.factor(.x))
+    across(c(apg1, twn, vent, pneumo, pda, cld, dead, id), ~ as.factor(.x))
   )
 
 cleaned_data %>% 
   skimr::skim()
+```
 
-print("Построим графики плотности распределения количественных переменных")
+Построим графики плотности распределения количественных переменных
+
+```{r, fig.width=14, fig.height = 14 }
+
 
 cleaned_data |> 
   select(where(is.numeric)) |> 
@@ -134,7 +138,7 @@ cleaned_data_1 |>
 
 # 3. Тест на сравнение значений колонки ‘lowph’ между группами в переменной inout.
 
-Выбран t_test с методом Уэлча, т.к. минимальное количество в группе 80 и дисперсии неизвестны .
+Выбран t_test с методом Уэлча, т.к. минимальное количество в группе 80 и дисперсии неизвестны.
 
 ```{r}
 library(rstatix)
@@ -144,7 +148,7 @@ t.test(cleaned_data_1$lowph ~ cleaned_data_1$inout, var.equal=FALSE, alternative
 
 ```
 
-*Интерпретация:* т.к. среднее в группе transported ниже, то можно предположить, что в данной группе более низкая выживаемость.
+*Интерпретация:* Отвергаем нулевую гипотезы о равенстве средних в группе born at Duke и группе transported. Т.к. среднее в группе transported статистически значимо ниже, то можно предположить, что в данной группе более низкая выживаемость.
 
 # 4.Новый датафрейм
 
@@ -374,7 +378,7 @@ fviz_pca_var(cont_data.pca, col.var = "contrib")
 
 ```
 
-*Интерпретация:* 3 компоненты обуславливают 83% дисперсии данных. В первую компоненту основной вклад вносят переменные: вес и гестационный возраст при рождении; во вторую компоненту основной вклад вносят число тромбоцитов; в третью компоненту основной вклад вносит минимальное значение pH и срок госпитализации.
+*Интерпретация:* 3 компоненты обуславливают 83% дисперсии данных. В первую компоненту основной вклад вносят переменные: вес и гестационный возраст при рождении; во вторую компоненту основной вклад вносят число тромбоцитов; в третью компоненту основной вклад вносит минимальное значение pH и срок госпитализации. PCA применяется в первую очередь для количественные данных и обязательно проводится масштабирование.
 
 # 8. PCA график
 
@@ -386,7 +390,7 @@ ggbiplot::ggbiplot(cont_data.pca,
          scale=0, 
          groups = as.factor(cont_data_1$dead), 
          ellipse = T,
-         alpha = 0.2,
+         alpha = 0.4,
          varname.size = 5,
          varname.color = "darkgreen") +
   labs(fill = "dead", color = "dead") +
@@ -409,7 +413,7 @@ p1 <- ggbiplot::ggbiplot(cont_data.pca,
                          scale = 0,
                          groups = as.factor(cont_data_1$dead), 
                          ellipse = T,
-                         alpha = 0.2,
+                         alpha = 0.4,
                          varname.size = 5,
                          varname.color = "darkgreen") +
   #labs(fill = "dead", color = "dead") +
@@ -440,3 +444,455 @@ p1
 ```
 
 # 10. Интерпретация PCA анализа
+Вес при рождении и неделя беременности, на которой произошло родоразрешение, определяют 47.2% вариации в количественных данных. Количество тромбоцитов определяют в свою очередь почти 20% вариации в данных, а Минимальное pH и длительность госпитализации определяют 16% вариации. Присутствует выраженное смещение случаев со смертельным исходом вдоль главной компоненты. 
+Почему использовать колонку 'dead' для выводов об ассоциации с выживаемостью некорректно? PCA анализ не выявляет аасоциации, а только определяет комбинации переменных, объясняющих вариацию данных, при минимальной корреляции компонент.
+
+# 11. UMAP
+
+```{r}
+library(tidymodels)
+library(embed)
+
+umap_prep <- recipe(~., data = cont_data_1 %>% select(-c("id", "dead"))) %>% # "техническая" строка, нужная для работы фреймворка tidymodels
+  step_normalize(all_predictors()) %>% # нормируем все колонки
+  step_umap(all_predictors(),
+            neighbors = 15,
+            num_comp = 2,
+            min_dist = 0.01) %>%  
+  prep() %>%   
+  juice() # Финальная строка - приводим результаты UMAP к стандартизированному датасету
+
+```
+
+Визуализиуем два измерения UMAP и добавим информацию о летальном исходе
+
+```{r}
+umap_prep %>%
+  ggplot(aes(UMAP1, UMAP2)) + #  # можно добавить раскраску 
+  geom_point(aes(color = as.character(cont_data_1$dead)
+                 ), 
+             alpha = 0.2, size = 2) +
+  labs(color = NULL) 
+```
+
+*Интерпретация:* После PCA точки распределены более равномерно, разряжено, в то время как после UMAP образуется больше локальных сгустков.
+
+# 12. Измените основные параметры UMAP (n_neighbors и min_dist) и проанализируйте, как это влияет на результаты
+
+```{r}
+
+n_n <- 15
+m_dist <- 0.01
+
+recipe(~., data = cont_data_1 %>% select(-c("id", "dead"))) %>% # "техническая" строка, нужная для работы фреймворка tidymodels
+  step_normalize(all_predictors()) %>% # нормируем все колонки
+  step_umap(all_predictors(),
+            neighbors = n_n,
+            num_comp = 2,
+            min_dist = m_dist) %>%  
+  prep() %>%   
+  juice()  %>%
+  ggplot(aes(UMAP1, UMAP2)) + #  # можно добавить раскраску 
+  geom_point(aes(color = as.character(cont_data_1$dead)
+                 ), 
+             alpha = 0.5, size = 2) +
+  annotate("label", x = 0, y = 0, label = paste(paste("Neighbors", as.character(n_n)), paste("Min_dist", as.character(m_dist)), sep="\n"), alpha =0.2) +
+  labs(color = NULL)
+
+```
+
+```{r}
+
+n_n <- 5
+m_dist <- 0.01
+
+recipe(~., data = cont_data_1 %>% select(-c("id", "dead"))) %>% # "техническая" строка, нужная для работы фреймворка tidymodels
+  step_normalize(all_predictors()) %>% # нормируем все колонки
+  step_umap(all_predictors(),
+            neighbors = n_n,
+            num_comp = 2,
+            min_dist = m_dist) %>%  
+  prep() %>%   
+  juice()  %>%
+  ggplot(aes(UMAP1, UMAP2)) + #  # можно добавить раскраску 
+  geom_point(aes(color = as.character(cont_data_1$dead)
+                 ), 
+             alpha = 0.5, size = 2) +
+  annotate("label", x = 0, y = 0, label = paste(paste("Neighbors", as.character(n_n)), paste("Min_dist", as.character(m_dist)), sep="\n"), alpha =0.2) +
+  labs(color = NULL)
+
+```
+
+```{r}
+
+n_n <- 25
+m_dist <- 0.01
+
+recipe(~., data = cont_data_1 %>% select(-c("id", "dead"))) %>% # "техническая" строка, нужная для работы фреймворка tidymodels
+  step_normalize(all_predictors()) %>% # нормируем все колонки
+  step_umap(all_predictors(),
+            neighbors = n_n,
+            num_comp = 2,
+            min_dist = m_dist) %>%  
+  prep() %>%   
+  juice()  %>%
+  ggplot(aes(UMAP1, UMAP2)) + #  # можно добавить раскраску 
+  geom_point(aes(color = as.character(cont_data_1$dead)
+                 ), 
+             alpha = 0.5, size = 2) +
+  annotate("label", x = 0, y = 0, label = paste(paste("Neighbors", as.character(n_n)), paste("Min_dist", as.character(m_dist)), sep="\n"), alpha =0.2) +
+  labs(color = NULL)
+
+```
+
+```{r}
+
+n_n <- 15
+m_dist <- 0.00
+
+recipe(~., data = cont_data_1 %>% select(-c("id", "dead"))) %>% # "техническая" строка, нужная для работы фреймворка tidymodels
+  step_normalize(all_predictors()) %>% # нормируем все колонки
+  step_umap(all_predictors(),
+            neighbors = n_n,
+            num_comp = 2,
+            min_dist = m_dist) %>%  
+  prep() %>%   
+  juice()  %>%
+  ggplot(aes(UMAP1, UMAP2)) + #  # можно добавить раскраску 
+  geom_point(aes(color = as.character(cont_data_1$dead)
+                 ), 
+             alpha = 0.5, size = 2) +
+  annotate("label", x = 0, 0, label = paste(paste("Neighbors", as.character(n_n)), paste("Min_dist", as.character(m_dist)), sep="\n"), alpha =0.2) +
+  labs(color = NULL)
+
+```
+
+```{r}
+
+n_n <- 15
+m_dist <- 0.9
+
+recipe(~., data = cont_data_1 %>% select(-c("id", "dead"))) %>% # "техническая" строка, нужная для работы фреймворка tidymodels
+  step_normalize(all_predictors()) %>% # нормируем все колонки
+  step_umap(all_predictors(),
+            neighbors = n_n,
+            num_comp = 2,
+            min_dist = m_dist) %>%  
+  prep() %>%   
+  juice()  %>%
+  ggplot(aes(UMAP1, UMAP2)) + #  # можно добавить раскраску 
+  geom_point(aes(color = as.character(cont_data_1$dead)
+                 ), 
+             alpha = 0.5, size = 2) +
+  annotate("label", x = 0, y = 0, label = paste(paste("Neighbors", as.character(n_n)), paste("Min_dist", as.character(m_dist)), sep="\n"), alpha =0.2) +
+  labs(color = NULL)
+
+```
+
+С уменьшением числа ближайших соседей уменьшается размер сгустков, с увеличением этого числа увеличивается разреженность облака точек наблюдений.
+С уменьшением минимальной дистанции увеличивается скученность точек, с увеличинем минимальной дистанции растет разреженность точек.
+
+# 13. Пермутируйте 50% и 100% колонки 'bwt'. Проведите PCA и UMAP анализ. 
+
+## 13.1 Пермутация 50% bwt
+```{r}
+cont_data[1:(nrow(cont_data)/2), ] <- transform(cont_data[1:(nrow(cont_data)/2), ], bwt = sample(bwt))
+```
+
+### 13.1.1 PCA
+
+```{r}
+cont_data.pca <- prcomp(cont_data %>%
+  select(-c("id")), 
+                scale = T) 
+summary(cont_data.pca)
+
+fviz_eig(cont_data.pca, 
+         addlabels = T, 
+         ylim = c(0, 50))
+
+fviz_contrib(cont_data.pca, choice = "var", axes = 1, top = 24)
+fviz_contrib(cont_data.pca, choice = "var", axes = 2, top = 24) 
+fviz_contrib(cont_data.pca, choice = "var", axes = 3, top = 24) 
+fviz_pca_var(cont_data.pca, col.var = "contrib")
+
+```
+
+```{r}
+
+cont_data_1 <- left_join(cont_data, cleaned_data_1 %>% select(c("id","dead")), by = c("id"))
+
+ggbiplot::ggbiplot(cont_data.pca, 
+         scale=0, 
+         groups = as.factor(cont_data_1$dead), 
+         ellipse = T,
+         alpha = 0.4,
+         varname.size = 5,
+         varname.color = "darkgreen") +
+  labs(fill = "dead", color = "dead") +
+  theme_minimal()
+
+
+
+```
+
+### 13.1.1 UMAP
+
+```{r}
+umap_prep <- recipe(~., data = cont_data_1 %>% select(-c("id", "dead"))) %>% # "техническая" строка, нужная для работы фреймворка tidymodels
+  step_normalize(all_predictors()) %>% # нормируем все колонки
+  step_umap(all_predictors(),
+            neighbors = 15,
+            num_comp = 2,
+            min_dist = 0.01) %>%  
+  prep() %>%   
+  juice() # Финальная строка - приводим результаты UMAP к стандартизированному датасету
+
+umap_prep %>%
+  ggplot(aes(UMAP1, UMAP2)) + #  # можно добавить раскраску 
+  geom_point(aes(color = as.character(cont_data_1$dead)
+                 ), 
+             alpha = 0.2, size = 2) +
+  labs(color = NULL) 
+
+```
+
+## 13.2 Пермутация 100% bwt
+```{r}
+cont_data <- transform(cont_data, bwt = sample(bwt))
+```
+### 13.2.1 PCA
+
+```{r}
+cont_data.pca <- prcomp(cont_data %>%
+  select(-c("id")), 
+                scale = T) 
+summary(cont_data.pca)
+
+fviz_eig(cont_data.pca, 
+         addlabels = T, 
+         ylim = c(0, 50))
+
+fviz_contrib(cont_data.pca, choice = "var", axes = 1, top = 24)
+fviz_contrib(cont_data.pca, choice = "var", axes = 2, top = 24) 
+fviz_contrib(cont_data.pca, choice = "var", axes = 3, top = 24) 
+fviz_pca_var(cont_data.pca, col.var = "contrib")
+
+```
+
+```{r}
+
+cont_data_1 <- left_join(cont_data, cleaned_data_1 %>% select(c("id","dead")), by = c("id"))
+
+ggbiplot::ggbiplot(cont_data.pca, 
+         scale=0, 
+         groups = as.factor(cont_data_1$dead), 
+         ellipse = T,
+         alpha = 0.4,
+         varname.size = 5,
+         varname.color = "darkgreen") +
+  labs(fill = "dead", color = "dead") +
+  theme_minimal()
+
+
+
+```
+
+### 13.2.1 UMAP
+
+```{r}
+umap_prep <- recipe(~., data = cont_data_1 %>% select(-c("id", "dead"))) %>% # "техническая" строка, нужная для работы фреймворка tidymodels
+  step_normalize(all_predictors()) %>% # нормируем все колонки
+  step_umap(all_predictors(),
+            neighbors = 15,
+            num_comp = 2,
+            min_dist = 0.01) %>%  
+  prep() %>%   
+  juice() # Финальная строка - приводим результаты UMAP к стандартизированному датасету
+
+umap_prep %>%
+  ggplot(aes(UMAP1, UMAP2)) + #  # можно добавить раскраску 
+  geom_point(aes(color = as.character(cont_data_1$dead)
+                 ), 
+             alpha = 0.2, size = 2) +
+  labs(color = NULL) 
+
+```
+
+*Интерпртация:* *Наблюдаете ли вы изменения в куммулятивном проценте объяснённой вариации PCA?* С ростом объема пермутации снижается кумулятивный процент первых компонент.
+
+*В итоговом представлении данных на биплотах для PCA?* Да, относительный вклад переменных в компоненты PCA, для 100% btw больше не коррелирует с gest и вносит основной вклад во вторую компоненту.
+
+*Отличается ли визуализация данных?* Отличается.
+
+# 14. Анализ чувствительности
+
+Удалим выбросы (п2) и заполним медианой все пропуски в численных данных
+
+## 14.1 Корреляция
+
+```{r}
+cleaned_data_full_1 <- raw_data[-which(raw_data$hospstay > 300 |raw_data$hospstay < 0),] %>% 
+  mutate_if(is.numeric, list(~ replace(., is.na(.), median(., na.rm = TRUE)))) %>% select(colnames(cleaned_data))
+
+cleaned_data_full_1 <- cleaned_data_full_1 %>%
+  mutate(
+    across(c(apg1, twn, vent, pneumo, pda, cld, dead, id), ~ as.factor(.x))
+  )
+
+
+
+cont_data <- cleaned_data_full_1 %>%
+  select(where(is.numeric), -c("birth", "year", "exit"), c("id"))
+
+library(corrplot)
+cont_data %>%
+  select(-c("id")) %>%
+  cor() %>% 
+  corrplot(
+    order = 'hclust'
+  )    
+
+library(GGally)
+lowerFn <- function(data, mapping, method = "lm", ...) {
+  p <- ggplot(data = data, mapping = mapping) +
+    # geom_point(colour = "blue") +
+    geom_smooth(method = method, color = "red", ...)
+  p
+}
+
+ggpairs(
+  cont_data %>%
+  select(-c("id")), 
+  progress = F,
+  lower = list(continuous = wrap(lowerFn, method = "lm")),
+  diag = list(continuous = wrap("barDiag", colour = "blue")),
+  upper = list(continuous = wrap("cor", size = 5))
+)
+
+
+```
+
+## 14.2 Иерархическая кластеризация
+
+```{r }
+library(factoextra)
+
+cont_data_scaled <- cont_data %>%
+  select(-c("id"))%>% 
+  scale()
+
+get_clust_tendency(cont_data_scaled, 
+                   n = nrow(cont_data_scaled)-1)[1]
+
+```
+
+Оценим кластеризацию:
+ 
+```{r}
+cont_data_dist <-  cont_data_scaled %>%
+  get_dist(method = "pearson")
+
+cont_data_clust <- cont_data_dist %>%
+  hclust(method = "ward.D2") 
+
+# Cophentic distance
+cont_data_dist.coph <- cophenetic(cont_data_clust)
+# Корреляция
+cor(cont_data_dist, cont_data_dist.coph)
+
+
+```
+
+```{r fig.height = 7, fig.width = 5}
+
+cont_data_clust %>%
+  fviz_dend(horiz= T,
+            cex = 0.6,
+            k = 3, # Задаём число кластеров
+            k_colors = c("#2E9FDF", "#E7B800", "#FC4E07"),
+            color_labels_by_k = TRUE, # Соотнести цвета с кластерами
+            rect = TRUE # Добавить "квадратик" вокруг групп
+            )
+
+```
+
+## 14.3 Heatmap
+
+```{r}
+library(pheatmap)
+
+pheatmap(cont_data_scaled, 
+         show_rownames = FALSE, 
+         clustering_distance_rows = cont_data_dist,
+         clustering_method = "ward.D2", 
+         cutree_rows = 4,
+         cutree_cols = length(colnames(cont_data_scaled)),
+         angle_col = 45, 
+         main = "Dendrograms for clustering rows and columns with heatmap")
+```
+
+*Интерпретация:* *Как отличаются получившиеся результаты?* Заполнение пропусков медианным значением привело к увеличению кол-ва данных для анализа, что значительно изменило значение коэффициента корреляции между длительностью госпитализации и весом ребенка при рождении (0.69 -> 0.74) и сроком беременности(-0.38 -> -0.22). Качество кластеризации осталось приблизительно тем же, heatmap сравним.
+*В чем преимущества и недостатки каждого подхода?*
+Преимущество заполнения пропусков-увеличение кол-ва данных, доступных для анализа. Недостатки-ошибки в коэффициентах корреляции.
+
+# 15. Анализ чувствительности.
+
+## 15.1 PCA
+
+```{r}
+cont_data.pca <- prcomp(cont_data %>%
+  select(-c("id")), 
+                scale = T) 
+summary(cont_data.pca)
+
+fviz_eig(cont_data.pca, 
+         addlabels = T, 
+         ylim = c(0, 50))
+
+fviz_contrib(cont_data.pca, choice = "var", axes = 1, top = 24)
+fviz_contrib(cont_data.pca, choice = "var", axes = 2, top = 24) 
+fviz_contrib(cont_data.pca, choice = "var", axes = 3, top = 24) 
+fviz_pca_var(cont_data.pca, col.var = "contrib")
+
+```
+
+```{r}
+
+cont_data_1 <- left_join(cont_data, cleaned_data_full_1 %>% select(c("id","dead")), by = c("id"))
+
+ggbiplot::ggbiplot(cont_data.pca, 
+         scale=0, 
+         groups = as.factor(cont_data_1$dead), 
+         ellipse = T,
+         alpha = 0.4,
+         varname.size = 5,
+         varname.color = "darkgreen") +
+  labs(fill = "dead", color = "dead") +
+  theme_minimal()
+
+
+
+```
+
+## 15.2 UMAP
+```{r}
+umap_prep <- recipe(~., data = cont_data_1 %>% select(-c("id", "dead"))) %>% # "техническая" строка, нужная для работы фреймворка tidymodels
+  step_normalize(all_predictors()) %>% # нормируем все колонки
+  step_umap(all_predictors(),
+            neighbors = 15,
+            num_comp = 2,
+            min_dist = 0.01) %>%  
+  prep() %>%   
+  juice() # Финальная строка - приводим результаты UMAP к стандартизированному датасету
+
+umap_prep %>%
+  ggplot(aes(UMAP1, UMAP2)) + #  # можно добавить раскраску 
+  geom_point(aes(color = as.character(cont_data_1$dead)
+                 ), 
+             alpha = 0.2, size = 2) +
+  labs(color = NULL) 
+
+```
+
+*Интерпретация:* Результаты PCA сильно не изменились при замене пропусков медианой, вместо удаления строк. UMAP выделил отдельные кластеры со смертельным исходом после заполнения пропусков медианным значением.
