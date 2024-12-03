@@ -1,0 +1,172 @@
+---
+title: "Homework MultiComp"
+author: "Anna Andreychenko"
+date: "`r Sys.Date()`"
+output: 
+   html_document:
+       keep_md: true
+       toc: true
+       toc_float:
+           collapsed: false
+           smooth_scroll: true
+       theme: flatly
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+library(tidyverse)
+library(ggplot2)
+
+```
+
+```{r read data}
+soccer_general <- read.csv("soccer.csv", sep=";")[, 2:6] %>%
+  mutate(Position = as.factor(Position),
+         Nationality = as.factor(Nationality),
+         Age = as.numeric(Age),
+         Height = as.numeric(Height)) %>%
+  filter(Nationality %in% c("Spanish", "Italian", "German", "English", "Argentinian"))
+
+set.seed(1)
+
+soccer_wrk <- soccer_general[sample(1:nrow(soccer_general), 150), ] %>%
+  mutate(Nationality = factor(Nationality))
+
+theme_custom <- theme(
+    #panel.background = element_rect(fill = "white"),
+    plot.title = element_text(size = 15, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    strip.text = element_text(size = 10),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  )
+```
+
+#Задание 1
+
+```{r}
+
+mheight <- soccer_wrk %>% group_by(Position) %>% summarise(mean_height = mean(Height), sd_height = sd(Height)) %>% arrange(mean_height)
+
+soccer_wrk %>%
+  ggplot(aes(x= reorder(Position, Height),
+                 y = Height)) +
+   geom_boxplot(aes(colour = Position), outlier.shape="", show.legend = FALSE) +
+  geom_jitter(width=0.2, color="grey")+
+  stat_summary(fun.y="mean", fun.ymin = function(x) mean(x) - sd(x), 
+               fun.ymax = function(x) mean(x) + sd(x), colour = "black",
+               geom = "pointrange", linewidth=1.2)+
+ 
+  xlab(label = "Позиция")+
+  labs(title = "Распределение роста футболистов на разных позициях")+
+  theme_custom 
+
+
+```
+
+## Парный т-тест без поправки 
+
+```{r}
+
+pairwise.t.test(soccer_wrk$Height,soccer_wrk$Position, p.adjust.method = "none", pool.sd=FALSE)
+
+```
+
+## Парный т-тест с поправкой Бонферрони
+
+```{r}
+
+pairwise.t.test(soccer_wrk$Height,soccer_wrk$Position, p.adjust.method = "bonferroni", pool.sd=FALSE)
+
+```
+
+## ДИ без поправки
+
+```{r}
+library(rstatix)
+
+result <- soccer_wrk %>% t_test(Height ~ Position, p.adjust.method = "none", detailed = TRUE) %>%
+  mutate(group = paste(group1, "-", group2)) %>% mutate(adjusted = "not_adjusted")
+
+
+```
+
+
+## ДИ с поправкой Бонферрони и 95% ДИ в генеральной совокупности
+
+```{r}
+
+result <- rbind(result, soccer_wrk %>% t_test(Height ~ Position, p.adjust.method = "none", detailed = TRUE, conf.level = 1 - 0.05/6) %>%
+  mutate(group = paste(group1, "-", group2)) %>% mutate(adjusted = "Bonferroni"))
+
+result <- rbind(result, soccer_general %>% t_test(Height ~ Position, p.adjust.method = "none", detailed = TRUE, conf.level = 1 - 0.05) %>%
+  mutate(group = paste(group1, "-", group2)) %>% mutate(adjusted = "real_diff"))
+
+```
+
+
+```{r, fig.width=10}
+result %>% ggplot(aes(x = adjusted, y = estimate))+
+  geom_point()+
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high))+
+  geom_hline(yintercept=0, color="red", linetype = "dashed") +
+  
+  theme_custom +
+  facet_wrap(vars(group))+
+  labs(title = "ДИ с поправкой Бонферрони, без и реальная разница между средними")
+
+
+```
+
+*ОТВЕТ* ДИ покрывают реальную разницу средних
+
+## p-values с поправкой Бонферрони
+
+```{r}
+
+soccer_wrk %>% pairwise_t_test(Height ~ Position, p.adjust.method = "bonferroni", detailed = FALSE, pool.sd = FALSE)
+
+```
+
+
+# Задание 2 Попарные тесты
+
+## Без поправки
+
+```{r}
+
+soccer_wrk %>% pairwise_t_test(Height ~ Position, p.adjust.method = "none", detailed = FALSE, pool.sd = FALSE)
+
+```
+
+*ОТВЕТ* Получилось 4 открытия, 1 ложноотрицательное (ошибка 2го рода)
+
+## Поправка Холма
+
+```{r}
+
+soccer_wrk %>% pairwise_t_test(Height ~ Position, p.adjust.method = "holm", detailed = FALSE, pool.sd = FALSE)
+
+pairwise.t.test(soccer_wrk$Height,soccer_wrk$Position, p.adjust.method = "holm", pool.sd=FALSE)
+
+```
+
+*ОТВЕТ* Получилось 4 открытия, 1 ложноотрицательное (ошибка 2го рода)
+
+## Поправка Бенджамини-Хохберга
+
+```{r}
+
+
+soccer_wrk %>% pairwise_t_test(Height ~ Position, p.adjust.method = "BH", detailed = FALSE, pool.sd = FALSE)
+
+pairwise.t.test(soccer_wrk$Height,soccer_wrk$Position, p.adjust.method = "BH", pool.sd=FALSE)
+
+```
+
+*ОТВЕТ* Получилось 4 открытия, 1 ложноотрицательное (ошибка 2го рода)
+
