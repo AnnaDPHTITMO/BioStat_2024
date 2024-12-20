@@ -1,0 +1,343 @@
+---
+title: "Homework"
+author: "Anna Andreychenko"
+date: "`r Sys.Date()`"
+output: 
+   html_document:
+       keep_md: true
+       toc: true
+       toc_float:
+           collapsed: false
+           smooth_scroll: true
+       theme: flatly
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+library(tidyverse)
+theme_set(theme_minimal())
+library(readxl)
+library(gtsummary)
+library(modelsummary)
+library(GGally)
+library(broom)
+library(ggfortify)
+library(ggResidpanel)
+library(performance)
+library(lmtest)
+library(sandwich)
+
+```
+
+# 1. Общие сведения об исходной таблице данных
+
+```{r}
+raw_data <- read_xlsx("HW_data.xlsx") %>% 
+  mutate(across(c(MCQ010, MCQ035, MCQ160C, MCQ160B, MCQ160E, MCQ160F, MCQ160M, MCQ160O, MCQ220, BPQ020, DIQ010, DMDEDUC2, RIDRETH3,RIAGENDR,SMQ040), as.factor))
+
+raw_data %>% 
+  skimr::skim()
+
+```
+
+# Задание 1. Каким образом вы будете оценивать физическую активность респондентов? Есть ли у вас предварительные предположения относительно того, каким образом выбранный вами показатель может быть ассоциирован с гликированным гемоглобином?
+
+**Ответ:** Физическую активность респодентов будем оценивать в виде суммарного количества минут активности за вычетом минут, проводимых сидя, с учетом интенсивности активностей. Расчет итоговой активности будем проводить по следующей формуле: сумма (кол-во дней Х кол-во минут в день Х поправочный коэффициент). Для Vigorous work/recreational активности поправочный коэффициент = 2 (берем за основу, что 1 минута такой активности эквивалентна двум минутам средней активности), для Moderate work/recreational и Walk or bicycle поправочный коэффициент = 1, а для sedentary activity поправочный коэффициент = - 0.1 (т.е. 1 минута, проведенная сидя, нивилирует положительный эффект 0.1 минуты средней активности). Таким образом итоговая активность total_PA = PAQ610 x PAD615 x 2 + PAQ625 x PAD630 x 1 + PAQ640 x PAD645 x 1 + PAQ655 x PAD660 x 2 + PAQ670 x PAD675 x 1 + 7(дней) x PAD680 x (-0.1).
+
+Предположительно данный показатель отрицательно ассоциирован с гликированным гемоглобином, т.е. чем выше общая физическая активность, тем ниже уровень гликированного гемоглобина.
+
+
+# Задание 2. Ковариаты для каких показателей вы включите в модель для коррекции эффекта физической активности в отношении гликированного гемоглобина? Каким образом вы будете их оценивать по имеющимся данным?
+
+**Ответ**: исходя из построенного DAG показатели Age, Comorbidities, Education, Family income, Race, Sex, Smoking являются конфаундерам и должны быть скорректированы (включены в модель регрессии вместе с показателем физической активности).
+Для Age будем использовать количественную переменную RIDAGEYR.
+Для Comorbidities будем использовать категориальную переменную, которая принимает значение 1, если любая из переменных MCQ010, MCQ035, MCQ160c, MCQ160b, MCQ160e, MCQ160f, MCQ160m, MCQ160o, MCQ220, BPQ020, DIQ010 имеет значение 1 (Yes), и принимает 2, если все указанные переменные имеют значение 2 (No).
+Для Education будем использовать категориальную переменную DMDEDUC2 (5 категорий) Для Family income будем использовать годовой доход семьи, поделенный на колич-во человек в семье (INDFMIN2/DMDHHSIZ), округленный до верхнего целочисленного значения, категориальная переменная.
+Для Race будем использовать категориальную переменную RIDRETH3 (7 категорий).
+Для Sex будем использовать категориальную переменную RIAGENDR (2 категории).
+Для Smoking будем использовать интенсивность курения в настоящее время SMQ040, категориальная переменная (3 категории 1,2,3).
+
+*Бонусное задание:* Age - конфаундер, Comorbidities - конфаундер, Education - конфаундер, Family income - конфаундер, Race - конфаундер, Sex - конфаундер, Smoking - прокси-конфаундер, Blood pressure - коллайдер, Diabetic medication - коллайдер, Marital status - предшественник exposure, Body Mass Index - медиатор
+
+# Задание 3. Эксплораторный анализ данных, которые будем использовать в моделировании
+
+```{r}
+cleaned_data <- raw_data %>% 
+  mutate( gHg = LBXGH,
+    total_PA = PAQ610*PAD615*2 + PAQ625*PAD630*1 + PAQ640*PAD645*1 + PAQ655*PAD660*2 + PAQ670*PAD675*1 + 7*PAD680*(-0.1),
+         Age = RIDAGEYR,
+         Comorbidities = as.factor(ifelse(MCQ010 == 1 | MCQ035 == 1 | MCQ160C == 1 | MCQ160B == 1 | MCQ160E == 1 | MCQ160F == 1 | MCQ160M == 1 | MCQ160O == 1 | MCQ220 == 1 | BPQ020 == 1 | DIQ010 == 1, "yes", "no")),
+        Education = DMDEDUC2,
+        Family_income = as.factor(ceiling(INDFMIN2/DMDHHSIZ)),
+        Race = RIDRETH3,
+        Sex = as.factor(ifelse(RIAGENDR == 1, "Male", "Female")),
+        Smoking = SMQ040
+         ) %>%
+  select(c(SEQN, gHg, total_PA, Age, Comorbidities, Education, Family_income,
+           Race, Sex, Smoking)) 
+
+tbl_summary(
+  cleaned_data, include = -c(SEQN), 
+  type = list(all_continuous() ~ "continuous2"),
+  statistic = list(
+    all_continuous() ~ c("{N_nonmiss}", "{mean} ({sd})", "{median} ({p25}-{p75})", "{min}-{max}")
+  )) %>%
+  modify_footnote(everything() ~ NA) %>%
+  bold_labels()
+
+```
+
+
+```{r, fig.width=15, fig.height=15}
+ggpairs(
+  cleaned_data %>% dplyr::select(gHg, total_PA, Age, Comorbidities, Education, Family_income, Race, Sex, Smoking), 
+  upper = list(continuous = wrap("points", alpha = 0.5, size = 1),
+               combo = wrap("points", alpha = 0.5, size = 1),
+               disrete = "blank"),
+  lower = list(continuous = "cor",
+               discrete = "count",
+               combo = wrap("box_no_facet", outlier.size = 0.5)),
+  diag = list(continuous = "barDiag",
+              discrete = "barDiag"),
+  showStrips = TRUE, progress = FALSE) +
+  theme_bw(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        panel.grid.minor = element_blank(),
+        strip.placement = "outside",
+        strip.background = element_rect(color = "white", fill = "#EFEBE9"),
+        strip.text = element_text(size = 10, face = "bold"))
+```
+
+# Задание 4. Оценка модели для зависимости гликированного гемоглобина от выбранного вами показателя физической активности без ковариат и с ними. Диагностика.
+
+## Модель без ковариат
+Формула и коэффициенты модели
+```{r}
+model_without_fit <- lm(gHg ~ total_PA , cleaned_data)
+print(model_without_fit)
+
+```
+
+### Диагностика. Fitted versus residuals & Scale-location
+```{r}
+autoplot(model_without_fit, c(1,3))
+```
+
+
+```{r, fig.width=8, fig.height=6}
+resid_xpanel(model_without_fit, smoother = TRUE)
+```
+
+1. Возможно источником нелинейности являются выбросы предиктора total_PA, для коррекции данной модели уберем респодентов с экстремально низкими значениями показателя физической активности  -1000 и ниже и трансформируем предиктор с помощью логарифмической функции.
+
+2. Присутствует гетероскедастичность. Коррекция: используем sandwich эстиматоры ошибок. 
+
+### Диагностика. QQ-plot и гистограмма
+
+```{r}
+resid_panel(model_without_fit, plots = c("qq", "hist"))
+```
+
+Присутствует ассиметричность распределения. Коррекцию проводить не будем. Возможно ассиметричность будет снижена после удаления экстремальных значений и трансформации предиктора log(total_PA).
+
+### Диагностика. Residuals vs Leverage
+
+```{r}
+
+resid_panel(model_without_fit, plots = c("lev", "cookd"))
+```
+
+Все расстояния Кука меньше 0.5, Однако, есть множество значений расстояния Кука превышающих 0.004 (4/916). Так как таких точек много, скорее всего это не является ошибкой анкетирования, поэтому этих респодентов оставляем.
+
+
+
+
+## Модель с ковариатами
+Формула и коэффициенты модели
+```{r}
+model_with_fit <- lm(gHg ~ total_PA + Age + Comorbidities + Education + Family_income + Race + Sex + Smoking, cleaned_data)
+print(model_with_fit)
+
+```
+### Диагностика. Fitted versus residuals & Scale-location
+```{r}
+autoplot(model_with_fit, c(1,3))
+```
+
+```{r, fig.width=8, fig.height=6}
+resid_xpanel(model_with_fit, smoother = TRUE)
+```
+
+1. Возможно источником нелинейности являются выбросы предиктора total_PA, для коррекции данной модели уберем респодентов с экстремально низкими значениями  - 1000 и ниже.
+
+2. Присутствует гетероскедастичность. Коррекция: используем sandwich естиматоры ошибок. coeftest(pima_ins, vcov. = vcovHC, type = "HC1")
+
+### Диагностика. QQ-plot и гистограмма
+
+```{r}
+resid_panel(model_with_fit, plots = c("qq", "hist"))
+```
+
+Присутствует ассиметричность распределения. Коррекцию проводить не будем. Возможно ассиметричность будет снижена после удаления экстремальных значений и предиктора total_PA.
+
+### Диагностика. Residuals vs Leverage
+
+```{r}
+
+resid_panel(model_with_fit, plots = c("lev", "cookd"))
+```
+
+Все расстояния Кука меньше 0.5, Однако, есть множество значений расстояния Кука первышающих 0.004 (4/916). Так как таких точек много, скорее всего это не является технической ошибкой анкетирования, поэтому этих респодентов оставляем.
+
+### Диагностика. Мультиколлинеарность:
+
+```{r, fig.width=12, fig.height=5}
+check_model(model_with_fit, check ="vif")
+```
+
+Коэффициенты корреляции Пирсона:
+
+```{r}
+cor(cleaned_data %>% dplyr::select(total_PA, Age))
+```
+Мультиколлинеарность не присутствует.
+
+
+Оценки всех коэффициентов и констант со стандартными ошибками, значения t-критерия и p-value для проверки нулевой гипотезы о равенстве 0 коэффициентов
+```{r}
+summary(model_with_fit)
+```
+
+Табличное представления оценок и доверительные интервалы
+```{r}
+broom::tidy(model_with_fit, conf.int = TRUE)
+
+```
+
+
+## Коррекция.
+Удалим экстремальные значения (-1000 и меньше) у предиктора total_PA и трансформируем данный предиктор с помощью натурального логарифма
+
+### Модель без ковариат.
+```{r}
+model_without_fit <- lm(gHg ~ log(total_PA + 1000) , cleaned_data %>% filter(total_PA > -1000))
+print(model_without_fit)
+```
+#### Диагностика после коррекции. Fitted versus residuals & Scale-location
+
+```{r}
+autoplot(model_without_fit, c(1,3))
+```
+
+
+```{r, fig.width=8, fig.height=6}
+resid_xpanel(model_without_fit, smoother = TRUE)
+```
+
+#### Диагностика после коррекции. QQ-plot и гистограмма
+
+```{r}
+resid_panel(model_without_fit, plots = c("qq", "hist"))
+```
+
+#### Диагностика после коррекции. Residuals vs Leverage
+
+```{r}
+
+resid_panel(model_without_fit, plots = c("lev", "cookd"))
+```
+
+*Вывод*: После удаления выбросов и использования натурального логарифма разброс остатков стал более равномерным, а расстояния Кука уменьшились. 
+
+Оценки всех коэффициентов и констант со стандартными ошибками, значения t-критерия и p-value для проверки нулевой гипотезы о равенстве 0 коэффициентов
+```{r}
+coeftest(model_without_fit, vcov = vcovHC, type = "HC1") %>% broom::tidy(conf.int = TRUE)
+```
+
+
+
+### Модель с ковариатами.
+
+```{r}
+
+model_with_fit <- lm(gHg ~ log(total_PA + 1000) + Age + Comorbidities + Education + Family_income + Race + Sex + Smoking, cleaned_data %>% filter(total_PA > -1000))
+print(model_with_fit)
+
+```
+
+#### Диагностика после корреции. Fitted versus residuals & Scale-location
+```{r}
+autoplot(model_with_fit, c(1,3))
+```
+
+
+```{r, fig.width=8, fig.height=6}
+resid_xpanel(model_with_fit, smoother = TRUE)
+```
+
+#### Диагностика после коррекции. QQ-plot и гистограмма
+
+```{r}
+resid_panel(model_with_fit, plots = c("qq", "hist"))
+```
+
+#### Диагностика после коррекции. Residuals vs Leverage
+
+```{r}
+
+resid_panel(model_with_fit, plots = c("lev", "cookd"))
+```
+
+#### Диагностика после коррекции. Мультиколлинеарность:
+
+```{r, fig.width=12, fig.height=5}
+check_model(model_with_fit, check ="vif")
+```
+
+Коэффициенты корреляции Пирсона:
+
+```{r}
+cor(cleaned_data %>% filter(total_PA > -1000) %>% dplyr::select(total_PA, Age))
+```
+*Вывод*: После удаления выбросов и использования натурального логарифма разброс остатков не изменился и расстояния Кука значительно не изменились.
+
+Оценки всех коэффициентов и констант со стандартными ошибками, значения t-критерия и p-value для проверки нулевой гипотезы о равенстве 0 коэффициентов
+```{r}
+coeftest(model_with_fit, vcov = vcovHC, type = "HC1") %>% broom::tidy(conf.int = TRUE)
+```
+
+# Задание 5. Представьте результаты оценки модели без ковариат и с ковариатами в виде точечной и интервальной оценки эффекта физической активности. Дайте им словесную интерпретацию. Какие выводы мы можем сделать, исходя из точечной оценки? А из интервальной? Как вы думаете, можно ли считать эффект клинически значимым? Если затрудняетесь с ответом, что бы вам помогло дать ответ на этот вопрос?
+
+1) Результаты оценки модели без ковариат в виде точечной оценки эффекта физической активности:
+0.154 (p > 0.05).
+
+
+2) Результаты оценки модели без ковариат в виде интеральной оценки эффекта физической активности:
+0.154 (95% ДИ: -0.128 - 0.436, p > 0.05).
+
+
+3) Результаты оценки модели с ковариатами в виде точечной оценки эффекта физической активности:
+-0.121 (p > 0.05).
+
+
+4) Результаты оценки модели с ковариатами в виде интеральной оценки эффекта физической активности:
+-0.121 (95% ДИ: -0.404 - 0.161, p > 0.05).
+
+*Интерпретация* В обеих моделях (без и с ковариатами) мы не можем отвергнуть нулевую гипотезу о нулевом эффекте физической активности на уровень гликированного гемоглобина. При интервальной оценке в обеих моделях интервал включает значение 0. Эффект является также клинически незначимым.
+
+# Задание 6. Проверьте гипотезу об отсутствии ассоциации между физической активностью и гликированным гемоглобином. Сделайте выводы по полученным результатам.
+
+Н0: корреляция между физической активностью и гликированным гемоглобином равна 0.
+Н1: корреляция между физической активностью и гликированным гемоглобином не равна 0.
+
+Тест коэффициента корреляции
+
+```{r}
+temp <- cleaned_data %>% filter(total_PA > -1000) %>% dplyr::select(gHg, total_PA)
+cor.test(temp$gHg, log(temp$total_PA+1000))
+```
+*Выводы*: мы не можем отвергнуть гипотезу об отсутствии линейной корреляции между логарифмом уровня физической активности и гликированным гемоглобином.
+
+
