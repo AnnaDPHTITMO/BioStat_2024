@@ -28,6 +28,7 @@ library(ggResidpanel)
 library(performance)
 library(lmtest)
 library(sandwich)
+library(emmeans)
 
 ```
 
@@ -222,7 +223,7 @@ broom::tidy(model_with_fit, conf.int = TRUE)
 
 ### Модель без ковариат.
 ```{r}
-model_without_fit <- lm(gHg ~ log(total_PA + 1000) , cleaned_data %>% filter(total_PA > -1000))
+model_without_fit <- lm(gHg ~ log(total_PA + 1000, 0.1) , cleaned_data %>% filter(total_PA > -1000))
 print(model_without_fit)
 ```
 #### Диагностика после коррекции. Fitted versus residuals & Scale-location
@@ -262,7 +263,7 @@ coeftest(model_without_fit, vcov = vcovHC, type = "HC1") %>% broom::tidy(conf.in
 
 ```{r}
 
-model_with_fit <- lm(gHg ~ log(total_PA + 1000) + Age + Comorbidities + Education + Family_income + Race + Sex + Smoking, cleaned_data %>% filter(total_PA > -1000))
+model_with_fit <- lm(gHg ~ log(total_PA + 1000, 0.1) + Age + Comorbidities + Education + Family_income + Race + Sex + Smoking, cleaned_data %>% filter(total_PA > -1000))
 print(model_with_fit)
 
 ```
@@ -336,8 +337,105 @@ coeftest(model_with_fit, vcov = vcovHC, type = "HC1") %>% broom::tidy(conf.int =
 
 ```{r}
 temp <- cleaned_data %>% filter(total_PA > -1000) %>% dplyr::select(gHg, total_PA)
-cor.test(temp$gHg, log(temp$total_PA+1000))
+cor.test(temp$gHg, log(temp$total_PA+1000, 0.1))
 ```
 *Выводы*: мы не можем отвергнуть гипотезу об отсутствии линейной корреляции между логарифмом уровня физической активности и гликированным гемоглобином.
 
+# Задание 7. Является ли пол модификатором эффекта физической активности в отношении гликированного гемоглобина? Если да, каков эффект для мужчин и женщин и насколько он отличается между ними?
 
+```{r}
+model_fit <- lm(gHg ~ log(total_PA + 1000, 0.1)*Sex , cleaned_data %>% filter(total_PA > -1000))
+summary(model_fit)
+```
+
+
+
+```{r}
+emtrends(model_fit, pairwise ~ Sex, var="log(total_PA + 1000, 0.1)")
+```
+
+*Ответ* Пол не является модификатором эффекта физической активности на уровень гликированного гемоглобина.
+
+# Задание 8. Соответствуют ли полученные вами результаты вашему исходному предположению? Как меняется оценка эффекта физической активности при добавлении ковариат в модель и почему?
+
+*Ответ* Полученные результаты не соответствуют исходному предположению, так как отвергнуть гипотезу о нулевом эффекте физической активности на гликированный гемоглобин не удалось. Оценка эффекта изменилась с положительной на отрицательную при добавлении ковариат, однако, в обоих моделях полученные р-значения и интервальные оценки не позволили нам отвергнуть нулевую гипотезу об отсутствии эффекта физической активности на гликированный гемоглобин.
+
+# Бонусное задание Оцените прямой (direct) эффект физической активности на гликированный гемоглобин (со всей необходимой диагностикой и коррекциями). Как он отличается от общего (total) эффекта? В чем причина/ механизм этих различий?
+
+```{r}
+cleaned_data2 <- raw_data %>% 
+  mutate( gHg = LBXGH,
+    total_PA = PAQ610*PAD615*2 + PAQ625*PAD630*1 + PAQ640*PAD645*1 + PAQ655*PAD660*2 + PAQ670*PAD675*1 + 7*PAD680*(-0.1),
+         Age = RIDAGEYR,
+         Comorbidities = as.factor(ifelse(MCQ010 == 1 | MCQ035 == 1 | MCQ160C == 1 | MCQ160B == 1 | MCQ160E == 1 | MCQ160F == 1 | MCQ160M == 1 | MCQ160O == 1 | MCQ220 == 1 | BPQ020 == 1 | DIQ010 == 1, "yes", "no")),
+        Education = DMDEDUC2,
+        Family_income = as.factor(ceiling(INDFMIN2/DMDHHSIZ)),
+        Race = RIDRETH3,
+        Sex = as.factor(ifelse(RIAGENDR == 1, "Male", "Female")),
+        Smoking = SMQ040,
+    BMI = BMXWT/(BMXHT/100)/(BMXHT/100)
+    
+         ) %>%
+  select(c(SEQN, gHg, total_PA, Age, Comorbidities, Education, Family_income,
+           Race, Sex, Smoking, BMI)) 
+```
+
+## Модель 
+Формула и коэффициенты модели
+```{r}
+model_direct_fit <- lm(gHg ~ total_PA + Age + Comorbidities + Education + Family_income + Race + Sex + Smoking + BMI, cleaned_data2)
+summary(model_direct_fit)
+
+```
+
+### Диагностика. Fitted versus residuals & Scale-location
+```{r}
+autoplot(model_direct_fit, c(1,3))
+```
+
+```{r, fig.width=8, fig.height=6}
+resid_xpanel(model_direct_fit, smoother = TRUE)
+```
+
+### Диагностика. QQ-plot и гистограмма
+
+```{r}
+resid_panel(model_direct_fit, plots = c("qq", "hist"))
+```
+
+### Диагностика. Residuals vs Leverage
+
+```{r}
+
+resid_panel(model_direct_fit, plots = c("lev", "cookd"))
+```
+
+### Диагностика. Мультиколлинеарность:
+
+```{r, fig.width=12, fig.height=5}
+check_model(model_direct_fit, check ="vif")
+```
+
+Коэффициенты корреляции Пирсона:
+
+```{r}
+cor(cleaned_data2 %>% dplyr::select(total_PA, Age, BMI))
+```
+
+*Выводы* Все паттерны и отклонения схожи с моделью изучения total эффекта физической активности, поэтому применим те же коррекции: удаление экстремальных значений у total_PA и трансформация этого предиктора с помощью логарифма.
+
+## Модель с коррекцией
+```{r}
+
+model_direct_fit <- lm(gHg ~ log(total_PA + 1000, 0.1) + Age + Comorbidities + Education + Family_income + Race + Sex + Smoking + BMI, cleaned_data2 %>% filter(total_PA > -1000))
+
+print(model_direct_fit)
+```
+
+```{r}
+
+coeftest(model_direct_fit, vcov = vcovHC, type = "HC1") %>% broom::tidy(conf.int = TRUE)
+
+```
+
+*Ответ* Прямой (direct) эффект физической активности на гликированный гемоглобин также является незначительным (нулевую гипотезу о нулевом прямом эффекте физической активности отвергнуть не можем). При этом индекс массы тела влияет на гликированный гемоглобин, коэффициент 0.03 (95% ДИ: 0.02-0.04, p < 0.05)

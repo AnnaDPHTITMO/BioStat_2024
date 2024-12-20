@@ -124,7 +124,7 @@ Table: Data summary
 Предположительно данный показатель отрицательно ассоциирован с гликированным гемоглобином, т.е. чем выше общая физическая активность, тем ниже уровень гликированного гемоглобина.
 
 
-#Задание 2. Ковариаты для каких показателей вы включите в модель для коррекции эффекта физической активности в отношении гликированного гемоглобина? Каким образом вы будете их оценивать по имеющимся данным?
+# Задание 2. Ковариаты для каких показателей вы включите в модель для коррекции эффекта физической активности в отношении гликированного гемоглобина? Каким образом вы будете их оценивать по имеющимся данным?
 
 **Ответ**: исходя из построенного DAG показатели Age, Comorbidities, Education, Family income, Race, Sex, Smoking являются конфаундерам и должны быть скорректированы (включены в модель регрессии вместе с показателем физической активности).
 Для Age будем использовать количественную переменную RIDAGEYR.
@@ -140,23 +140,23 @@ Table: Data summary
 
 
 ```{=html}
-<div id="kxkoqovedt" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#kxkoqovedt table {
+<div id="bdugiecizl" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#bdugiecizl table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#kxkoqovedt thead, #kxkoqovedt tbody, #kxkoqovedt tfoot, #kxkoqovedt tr, #kxkoqovedt td, #kxkoqovedt th {
+#bdugiecizl thead, #bdugiecizl tbody, #bdugiecizl tfoot, #bdugiecizl tr, #bdugiecizl td, #bdugiecizl th {
   border-style: none;
 }
 
-#kxkoqovedt p {
+#bdugiecizl p {
   margin: 0;
   padding: 0;
 }
 
-#kxkoqovedt .gt_table {
+#bdugiecizl .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -182,12 +182,12 @@ Table: Data summary
   border-left-color: #D3D3D3;
 }
 
-#kxkoqovedt .gt_caption {
+#bdugiecizl .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#kxkoqovedt .gt_title {
+#bdugiecizl .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -199,7 +199,7 @@ Table: Data summary
   border-bottom-width: 0;
 }
 
-#kxkoqovedt .gt_subtitle {
+#bdugiecizl .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -211,7 +211,7 @@ Table: Data summary
   border-top-width: 0;
 }
 
-#kxkoqovedt .gt_heading {
+#bdugiecizl .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -223,13 +223,13 @@ Table: Data summary
   border-right-color: #D3D3D3;
 }
 
-#kxkoqovedt .gt_bottom_border {
+#bdugiecizl .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#kxkoqovedt .gt_col_headings {
+#bdugiecizl .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -244,7 +244,7 @@ Table: Data summary
   border-right-color: #D3D3D3;
 }
 
-#kxkoqovedt .gt_col_heading {
+#bdugiecizl .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -264,7 +264,7 @@ Table: Data summary
   overflow-x: hidden;
 }
 
-#kxkoqovedt .gt_column_spanner_outer {
+#bdugiecizl .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -276,15 +276,15 @@ Table: Data summary
   padding-right: 4px;
 }
 
-#kxkoqovedt .gt_column_spanner_outer:first-child {
+#bdugiecizl .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#kxkoqovedt .gt_column_spanner_outer:last-child {
+#bdugiecizl .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#kxkoqovedt .gt_column_spanner {
+#bdugiecizl .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -296,11 +296,11 @@ Table: Data summary
   width: 100%;
 }
 
-#kxkoqovedt .gt_spanner_row {
+#bdugiecizl .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#kxkoqovedt .gt_group_heading {
+#bdugiecizl .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -326,7 +326,7 @@ Table: Data summary
   text-align: left;
 }
 
-#kxkoqovedt .gt_empty_group_heading {
+#bdugiecizl .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -341,15 +341,15 @@ Table: Data summary
   vertical-align: middle;
 }
 
-#kxkoqovedt .gt_from_md > :first-child {
+#bdugiecizl .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#kxkoqovedt .gt_from_md > :last-child {
+#bdugiecizl .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#kxkoqovedt .gt_row {
+#bdugiecizl .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -368,7 +368,7 @@ Table: Data summary
   overflow-x: hidden;
 }
 
-#kxkoqovedt .gt_stub {
+#bdugiecizl .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -381,7 +381,7 @@ Table: Data summary
   padding-right: 5px;
 }
 
-#kxkoqovedt .gt_stub_row_group {
+#bdugiecizl .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -395,15 +395,15 @@ Table: Data summary
   vertical-align: top;
 }
 
-#kxkoqovedt .gt_row_group_first td {
+#bdugiecizl .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#kxkoqovedt .gt_row_group_first th {
+#bdugiecizl .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#kxkoqovedt .gt_summary_row {
+#bdugiecizl .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -413,16 +413,16 @@ Table: Data summary
   padding-right: 5px;
 }
 
-#kxkoqovedt .gt_first_summary_row {
+#bdugiecizl .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#kxkoqovedt .gt_first_summary_row.thick {
+#bdugiecizl .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#kxkoqovedt .gt_last_summary_row {
+#bdugiecizl .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -432,7 +432,7 @@ Table: Data summary
   border-bottom-color: #D3D3D3;
 }
 
-#kxkoqovedt .gt_grand_summary_row {
+#bdugiecizl .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -442,7 +442,7 @@ Table: Data summary
   padding-right: 5px;
 }
 
-#kxkoqovedt .gt_first_grand_summary_row {
+#bdugiecizl .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -452,7 +452,7 @@ Table: Data summary
   border-top-color: #D3D3D3;
 }
 
-#kxkoqovedt .gt_last_grand_summary_row_top {
+#bdugiecizl .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -462,11 +462,11 @@ Table: Data summary
   border-bottom-color: #D3D3D3;
 }
 
-#kxkoqovedt .gt_striped {
+#bdugiecizl .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#kxkoqovedt .gt_table_body {
+#bdugiecizl .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -475,7 +475,7 @@ Table: Data summary
   border-bottom-color: #D3D3D3;
 }
 
-#kxkoqovedt .gt_footnotes {
+#bdugiecizl .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -489,7 +489,7 @@ Table: Data summary
   border-right-color: #D3D3D3;
 }
 
-#kxkoqovedt .gt_footnote {
+#bdugiecizl .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -498,7 +498,7 @@ Table: Data summary
   padding-right: 5px;
 }
 
-#kxkoqovedt .gt_sourcenotes {
+#bdugiecizl .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -512,7 +512,7 @@ Table: Data summary
   border-right-color: #D3D3D3;
 }
 
-#kxkoqovedt .gt_sourcenote {
+#bdugiecizl .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -520,72 +520,72 @@ Table: Data summary
   padding-right: 5px;
 }
 
-#kxkoqovedt .gt_left {
+#bdugiecizl .gt_left {
   text-align: left;
 }
 
-#kxkoqovedt .gt_center {
+#bdugiecizl .gt_center {
   text-align: center;
 }
 
-#kxkoqovedt .gt_right {
+#bdugiecizl .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#kxkoqovedt .gt_font_normal {
+#bdugiecizl .gt_font_normal {
   font-weight: normal;
 }
 
-#kxkoqovedt .gt_font_bold {
+#bdugiecizl .gt_font_bold {
   font-weight: bold;
 }
 
-#kxkoqovedt .gt_font_italic {
+#bdugiecizl .gt_font_italic {
   font-style: italic;
 }
 
-#kxkoqovedt .gt_super {
+#bdugiecizl .gt_super {
   font-size: 65%;
 }
 
-#kxkoqovedt .gt_footnote_marks {
+#bdugiecizl .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#kxkoqovedt .gt_asterisk {
+#bdugiecizl .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#kxkoqovedt .gt_indent_1 {
+#bdugiecizl .gt_indent_1 {
   text-indent: 5px;
 }
 
-#kxkoqovedt .gt_indent_2 {
+#bdugiecizl .gt_indent_2 {
   text-indent: 10px;
 }
 
-#kxkoqovedt .gt_indent_3 {
+#bdugiecizl .gt_indent_3 {
   text-indent: 15px;
 }
 
-#kxkoqovedt .gt_indent_4 {
+#bdugiecizl .gt_indent_4 {
   text-indent: 20px;
 }
 
-#kxkoqovedt .gt_indent_5 {
+#bdugiecizl .gt_indent_5 {
   text-indent: 25px;
 }
 
-#kxkoqovedt .katex-display {
+#bdugiecizl .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#kxkoqovedt div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#bdugiecizl div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -905,6 +905,8 @@ Table: Data summary
 
 ![](Home_work_Anna_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
 
+*Вывод*: После удаления выбросов и использования натурального логарифма разброс остатков стал более равномерным, а расстояния Кука уменьшились. 
+
 Оценки всех коэффициентов и констант со стандартными ошибками, значения t-критерия и p-value для проверки нулевой гипотезы о равенстве 0 коэффициентов
 
 ```
@@ -915,7 +917,7 @@ Table: Data summary
 ## 2 log(total_PA + 1000,…    0.154     0.144      1.07 2.85e- 1   -0.128     0.436
 ```
 
-*Вывод*
+
 
 ### Модель с ковариатами.
 
@@ -981,10 +983,10 @@ Table: Data summary
 
 ```
 ##            total_PA        Age
-## total_PA  1.0000000 -0.2656345
-## Age      -0.2656345  1.0000000
+## total_PA  1.0000000 -0.2664293
+## Age      -0.2664293  1.0000000
 ```
-
+*Вывод*: После удаления выбросов и использования натурального логарифма разброс остатков не изменился и расстояния Кука значительно не изменились.
 
 Оценки всех коэффициентов и констант со стандартными ошибками, значения t-критерия и p-value для проверки нулевой гипотезы о равенстве 0 коэффициентов
 
@@ -1005,3 +1007,237 @@ Table: Data summary
 ## # ℹ 17 more rows
 ```
 
+# Задание 5. Представьте результаты оценки модели без ковариат и с ковариатами в виде точечной и интервальной оценки эффекта физической активности. Дайте им словесную интерпретацию. Какие выводы мы можем сделать, исходя из точечной оценки? А из интервальной? Как вы думаете, можно ли считать эффект клинически значимым? Если затрудняетесь с ответом, что бы вам помогло дать ответ на этот вопрос?
+
+1) Результаты оценки модели без ковариат в виде точечной оценки эффекта физической активности:
+0.154 (p > 0.05).
+
+
+2) Результаты оценки модели без ковариат в виде интеральной оценки эффекта физической активности:
+0.154 (95% ДИ: -0.128 - 0.436, p > 0.05).
+
+
+3) Результаты оценки модели с ковариатами в виде точечной оценки эффекта физической активности:
+-0.121 (p > 0.05).
+
+
+4) Результаты оценки модели с ковариатами в виде интеральной оценки эффекта физической активности:
+-0.121 (95% ДИ: -0.404 - 0.161, p > 0.05).
+
+*Интерпретация* В обеих моделях (без и с ковариатами) мы не можем отвергнуть нулевую гипотезу о нулевом эффекте физической активности на уровень гликированного гемоглобина. При интервальной оценке в обеих моделях интервал включает значение 0. Эффект является также клинически незначимым.
+
+# Задание 6. Проверьте гипотезу об отсутствии ассоциации между физической активностью и гликированным гемоглобином. Сделайте выводы по полученным результатам.
+
+Н0: корреляция между физической активностью и гликированным гемоглобином равна 0.
+Н1: корреляция между физической активностью и гликированным гемоглобином не равна 0.
+
+Тест коэффициента корреляции
+
+
+```
+## 
+## 	Pearson's product-moment correlation
+## 
+## data:  temp$gHg and log(temp$total_PA + 1000, 0.1)
+## t = 1.258, df = 912, p-value = 0.2087
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  -0.02328681  0.10618023
+## sample estimates:
+##        cor 
+## 0.04162142
+```
+*Выводы*: мы не можем отвергнуть гипотезу об отсутствии линейной корреляции между логарифмом уровня физической активности и гликированным гемоглобином.
+
+# Задание 7. Является ли пол модификатором эффекта физической активности в отношении гликированного гемоглобина? Если да, каков эффект для мужчин и женщин и насколько он отличается между ними?
+
+
+```
+## 
+## Call:
+## lm(formula = gHg ~ log(total_PA + 1000, 0.1) * Sex, data = cleaned_data %>% 
+##     filter(total_PA > -1000))
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -1.6719 -0.5092 -0.2175  0.1274  8.0949 
+## 
+## Coefficients:
+##                                   Estimate Std. Error t value Pr(>|t|)    
+## (Intercept)                        5.73307    0.70694   8.110 1.63e-15 ***
+## log(total_PA + 1000, 0.1)         -0.05025    0.23623  -0.213    0.832    
+## SexMale                            0.53823    0.84385   0.638    0.524    
+## log(total_PA + 1000, 0.1):SexMale  0.21895    0.27855   0.786    0.432    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 1.035 on 910 degrees of freedom
+## Multiple R-squared:  0.005651,	Adjusted R-squared:  0.002373 
+## F-statistic: 1.724 on 3 and 910 DF,  p-value: 0.1604
+```
+
+
+
+
+```
+## $emtrends
+##  Sex    log(total_PA + 1000, 0.1).trend    SE  df lower.CL upper.CL
+##  Female                         -0.0503 0.236 910   -0.514    0.413
+##  Male                            0.1687 0.148 910   -0.121    0.458
+## 
+## Confidence level used: 0.95 
+## 
+## $contrasts
+##  contrast      estimate    SE  df t.ratio p.value
+##  Female - Male   -0.219 0.279 910  -0.786  0.4320
+```
+
+*Ответ* Пол не является модификатором эффекта физической активности на уровень гликированного гемоглобина.
+
+# Задание 8. Соответствуют ли полученные вами результаты вашему исходному предположению? Как меняется оценка эффекта физической активности при добавлении ковариат в модель и почему?
+
+*Ответ* Полученные результаты не соответствуют исходному предположению, так как отвергнуть гипотезу о нулевом эффекте физической активности на гликированный гемоглобин не удалось. Оценка эффекта изменилась с положительной на отрицательную при добавлении ковариат, однако, в обоих моделях полученные р-значения и интервальные оценки не позволили нам отвергнуть нулевую гипотезу об отсутствии эффекта физической активности на гликированный гемоглобин.
+
+# Бонусное задание Оцените прямой (direct) эффект физической активности на гликированный гемоглобин (со всей необходимой диагностикой и коррекциями). Как он отличается от общего (total) эффекта? В чем причина/ механизм этих различий?
+
+
+
+## Модель 
+Формула и коэффициенты модели
+
+```
+## 
+## Call:
+## lm(formula = gHg ~ total_PA + Age + Comorbidities + Education + 
+##     Family_income + Race + Sex + Smoking + BMI, data = cleaned_data2)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -2.1633 -0.4422 -0.1075  0.1717  7.7626 
+## 
+## Coefficients:
+##                    Estimate Std. Error t value Pr(>|t|)    
+## (Intercept)       4.398e+00  2.669e-01  16.479  < 2e-16 ***
+## total_PA          5.179e-05  2.514e-05   2.060 0.039717 *  
+## Age               1.401e-02  2.424e-03   5.781 1.03e-08 ***
+## Comorbiditiesyes  3.236e-01  7.284e-02   4.443 1.00e-05 ***
+## Education2       -1.171e-01  1.611e-01  -0.727 0.467544    
+## Education3       -3.222e-01  1.564e-01  -2.060 0.039703 *  
+## Education4       -2.870e-01  1.549e-01  -1.853 0.064179 .  
+## Education5       -3.354e-01  1.641e-01  -2.043 0.041315 *  
+## Family_income2   -5.944e-02  1.145e-01  -0.519 0.603672    
+## Family_income3   -3.510e-02  1.196e-01  -0.293 0.769272    
+## Family_income4   -1.571e-01  1.315e-01  -1.195 0.232458    
+## Family_income5   -6.243e-02  1.803e-01  -0.346 0.729170    
+## Family_income6    5.537e-03  1.430e-01   0.039 0.969127    
+## Family_income7   -2.819e-01  2.244e-01  -1.256 0.209330    
+## Family_income8   -4.688e-01  2.751e-01  -1.704 0.088723 .  
+## Family_income9    1.081e+00  3.081e-01   3.508 0.000474 ***
+## Family_income10   8.271e-01  4.411e-01   1.875 0.061096 .  
+## Family_income11  -5.906e-01  4.404e-01  -1.341 0.180219    
+## Family_income12  -1.057e-01  3.780e-01  -0.280 0.779754    
+## Race2            -9.524e-02  1.502e-01  -0.634 0.526086    
+## Race3            -2.763e-01  1.152e-01  -2.399 0.016661 *  
+## Race4             6.120e-02  1.264e-01   0.484 0.628268    
+## Race6             2.478e-01  1.563e-01   1.586 0.113152    
+## Race7            -3.073e-01  2.233e-01  -1.376 0.169120    
+## SexMale           6.456e-02  6.995e-02   0.923 0.356274    
+## Smoking2         -1.103e-01  1.913e-01  -0.576 0.564433    
+## Smoking3         -6.533e-02  9.526e-02  -0.686 0.493033    
+## BMI               2.965e-02  4.895e-03   6.059 2.03e-09 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 0.9455 on 888 degrees of freedom
+## Multiple R-squared:  0.1901,	Adjusted R-squared:  0.1655 
+## F-statistic: 7.722 on 27 and 888 DF,  p-value: < 2.2e-16
+```
+
+### Диагностика. Fitted versus residuals & Scale-location
+![](Home_work_Anna_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
+
+![](Home_work_Anna_files/figure-html/unnamed-chunk-38-1.png)<!-- -->
+
+### Диагностика. QQ-plot и гистограмма
+
+![](Home_work_Anna_files/figure-html/unnamed-chunk-39-1.png)<!-- -->
+
+### Диагностика. Residuals vs Leverage
+
+![](Home_work_Anna_files/figure-html/unnamed-chunk-40-1.png)<!-- -->
+
+### Диагностика. Мультиколлинеарность:
+
+![](Home_work_Anna_files/figure-html/unnamed-chunk-41-1.png)<!-- -->
+
+Коэффициенты корреляции Пирсона:
+
+
+```
+##             total_PA         Age        BMI
+## total_PA  1.00000000 -0.26563450 0.01428083
+## Age      -0.26563450  1.00000000 0.02099652
+## BMI       0.01428083  0.02099652 1.00000000
+```
+
+*Выводы* Все паттерны и отклонения схожи с моделью изучения total эффекта физической активности, поэтому применим те же коррекции: удаление экстремальных значений у total_PA и трансформация этого предиктора с помощью логарифма.
+
+## Модель с коррекцией
+
+```
+## 
+## Call:
+## lm(formula = gHg ~ log(total_PA + 1000, 0.1) + Age + Comorbidities + 
+##     Education + Family_income + Race + Sex + Smoking + BMI, data = cleaned_data2 %>% 
+##     filter(total_PA > -1000))
+## 
+## Coefficients:
+##               (Intercept)  log(total_PA + 1000, 0.1)  
+##                  3.902255                  -0.167934  
+##                       Age           Comorbiditiesyes  
+##                  0.013858                   0.326810  
+##                Education2                 Education3  
+##                 -0.106157                  -0.310416  
+##                Education4                 Education5  
+##                 -0.277341                  -0.332321  
+##            Family_income2             Family_income3  
+##                 -0.065885                  -0.040483  
+##            Family_income4             Family_income5  
+##                 -0.163709                  -0.061396  
+##            Family_income6             Family_income7  
+##                  0.001562                  -0.286629  
+##            Family_income8             Family_income9  
+##                 -0.473763                   1.080452  
+##           Family_income10            Family_income11  
+##                  0.818907                  -0.588858  
+##           Family_income12                      Race2  
+##                 -0.103270                  -0.101989  
+##                     Race3                      Race4  
+##                 -0.281712                   0.049146  
+##                     Race6                      Race7  
+##                  0.236690                  -0.317291  
+##                   SexMale                   Smoking2  
+##                  0.072003                  -0.121176  
+##                  Smoking3                        BMI  
+##                 -0.072782                   0.030305
+```
+
+
+```
+## # A tibble: 28 × 7
+##    term                 estimate std.error statistic  p.value conf.low conf.high
+##    <chr>                   <dbl>     <dbl>     <dbl>    <dbl>    <dbl>     <dbl>
+##  1 (Intercept)            3.90     0.459       8.51  7.34e-17  3.00       4.80  
+##  2 log(total_PA + 1000…  -0.168    0.140      -1.20  2.29e- 1 -0.442      0.106 
+##  3 Age                    0.0139   0.00203     6.82  1.73e-11  0.00987    0.0178
+##  4 Comorbiditiesyes       0.327    0.0573      5.71  1.56e- 8  0.214      0.439 
+##  5 Education2            -0.106    0.190      -0.560 5.76e- 1 -0.478      0.266 
+##  6 Education3            -0.310    0.185      -1.68  9.32e- 2 -0.673      0.0521
+##  7 Education4            -0.277    0.180      -1.54  1.23e- 1 -0.630      0.0756
+##  8 Education5            -0.332    0.187      -1.77  7.65e- 2 -0.700      0.0354
+##  9 Family_income2        -0.0659   0.120      -0.548 5.84e- 1 -0.302      0.170 
+## 10 Family_income3        -0.0405   0.116      -0.349 7.27e- 1 -0.268      0.187 
+## # ℹ 18 more rows
+```
+
+*Ответ* Прямой (direct) эффект физической активности на гликированный гемоглобин также является незначительным (нулевую гипотезу о нулевом прямом эффекте физической активности отвергнуть не можем). При этом индекс массы тела влияет на гликированный гемоглобин, коэффициент 0.03 (95% ДИ: 0.02-0.04, p < 0.05)
